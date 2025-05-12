@@ -1,61 +1,45 @@
-import { useState, useEffect } from "react";
 import {
+  Stepper,
+  Step,
+  StepLabel,
   Box,
+  Typography,
   Button,
+  CircularProgress,
   Card,
   CardContent,
-  Typography,
-  CircularProgress,
   Divider,
 } from "@mui/material";
+import { useState } from "react";
+import { useDropzone } from "react-dropzone";
 import { PDFDownloadLink, BlobProvider } from "@react-pdf/renderer";
 import ResumePDF from "./ResumePreview";
-import { useNavigate } from "react-router-dom";
-import { useDropzone } from "react-dropzone";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import DescriptionIcon from "@mui/icons-material/Description";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
 
-const Upload = () => {
+const steps = ["Upload", "Preview", "Download"];
+
+export default function Upload() {
   const [file, setFile] = useState(null);
   const [jsonData, setJsonData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isDataReady, setIsDataReady] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
 
-  const navigate = useNavigate();
   const token = localStorage.getItem("token");
-
-  useEffect(() => {
-    if (!token) {
-      navigate("/login");
-    }
-  }, [token, navigate]);
-
-  useEffect(() => {
-    if (file) {
-      setJsonData(null);
-      setError(null);
-      setIsDataReady(false);
-    }
-  }, [file]);
 
   const handleUpload = async () => {
     if (!file) return;
     setLoading(true);
     setError(null);
-    setJsonData(null);
-    setIsDataReady(false);
-
     const form = new FormData();
     form.append("file", file);
 
     try {
       const res = await fetch("http://localhost:8000/resume/upload", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token || ""}`,
-        },
+        headers: { Authorization: `Bearer ${token || ""}` },
         body: form,
       });
 
@@ -66,38 +50,24 @@ const Upload = () => {
 
       const data = await res.json();
       setJsonData(data);
-      setIsDataReady(true);
+      setActiveStep(1); // Move to Preview step
     } catch (err) {
-      setError(err.message || "An error occurred during upload");
+      setError(err.message || "Upload error");
     } finally {
       setLoading(false);
     }
   };
 
-  const {
-    getRootProps,
-    getInputProps,
-    isDragActive,
-    isDragAccept,
-    isDragReject,
-  } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       "application/pdf": [".pdf"],
       "application/msword": [".doc"],
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         [".docx"],
     },
-    onDrop: (acceptedFiles, fileRejections) => {
-      if (fileRejections.length > 0) {
-        setError("Please upload a PDF, DOC, or DOCX file.");
-        setFile(null);
-        return;
-      }
+    onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
         setFile(acceptedFiles[0]);
-        setError(null);
-      } else {
-        setFile(null);
         setError(null);
       }
     },
@@ -105,218 +75,163 @@ const Upload = () => {
   });
 
   const getFileIcon = () => {
-    if (!file) {
-      return <UploadFileIcon sx={{ fontSize: 40, color: "text.secondary" }} />;
-    }
-    const fileExtension = file.name.split(".").pop()?.toLowerCase();
-    if (fileExtension === "pdf") {
-      return <PictureAsPdfIcon sx={{ fontSize: 40, color: "error.main" }} />;
-    }
-    if (fileExtension === "doc" || fileExtension === "docx") {
-      return <DescriptionIcon sx={{ fontSize: 40, color: "primary.main" }} />;
-    }
-    return <UploadFileIcon sx={{ fontSize: 40, color: "text.secondary" }} />;
-  };
-
-  const dropzoneStyle = {
-    border: "2px dashed #e0e0e0",
-    borderRadius: "12px",
-    padding: "30px",
-    textAlign: "center",
-    cursor: "pointer",
-    background: file
-      ? "#fff"
-      : "linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%)",
-    borderColor: isDragAccept
-      ? "#4caf50"
-      : isDragReject
-      ? "#f44336"
-      : "#e0e0e0",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-    transition: "all 0.3s ease",
-    width: "100%",
-    minHeight: "150px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
+    if (!file) return <UploadFileIcon fontSize="large" />;
+    const ext = file.name.split(".").pop();
+    if (ext === "pdf")
+      return <PictureAsPdfIcon color="error" fontSize="large" />;
+    if (["doc", "docx"].includes(ext))
+      return <DescriptionIcon color="primary" fontSize="large" />;
+    return <UploadFileIcon fontSize="large" />;
   };
 
   return (
-    <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="start"
-      mt={2}
-      minHeight="90vh"
-      bgcolor="white"
-    >
-      <Card sx={{ width: "90%", maxWidth: 1000, p: 3 }}>
+    <Box p={3}>
+      <Card sx={{ maxWidth: 1000, margin: "auto", p: 3 }}>
         <CardContent>
-          <Typography variant="h5" textAlign="center" gutterBottom>
-            Upload Resume
+          <Typography variant="h5" align="center" gutterBottom>
+            Resume Processor
           </Typography>
 
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            gap={2}
-          >
-            <Box {...getRootProps()} sx={dropzoneStyle}>
-              <input {...getInputProps()} />
-              {getFileIcon()}
-              {isDragActive ? (
-                <Typography
-                  variant="body1"
-                  color={isDragAccept ? "success.main" : "error.main"}
-                  sx={{ mt: 1 }}
-                >
-                  {isDragAccept ? "Drop the file here!" : "Invalid file type!"}
-                </Typography>
-              ) : (
-                <Typography
-                  variant="body1"
-                  color="text.secondary"
-                  sx={{ mt: 1 }}
-                >
-                  {file
+          <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+
+          {activeStep === 0 && (
+            <Box
+              sx={{
+                border: "2px dashed #ccc",
+                p: 4,
+                textAlign: "center",
+                borderRadius: 2,
+                backgroundColor: "#fafafa",
+                cursor: "pointer",
+              }}
+            >
+              <div {...getRootProps()}>
+                <input {...getInputProps()} />
+                {getFileIcon()}
+                <Typography variant="body1" sx={{ mt: 2 }}>
+                  {isDragActive
+                    ? "Drop your file..."
+                    : file
                     ? file.name
-                    : "Drag and drop a PDF, DOC, or DOCX file here, or click to select"}
+                    : "Drag & drop or click to select a file"}
+                </Typography>
+              </div>
+
+              <Box
+                mt={3}
+                display="flex"
+                gap={2}
+                justifyContent="center"
+                flexWrap="wrap"
+              >
+                <Button
+                  variant="outlined"
+                  onClick={() =>
+                    document.querySelector('input[type="file"]').click()
+                  }
+                >
+                  Choose File
+                </Button>
+
+                <Button
+                  variant="contained"
+                  onClick={handleUpload}
+                  disabled={!file || loading}
+                >
+                  {loading ? "Uploading..." : "Upload"}
+                </Button>
+              </Box>
+
+              {error && (
+                <Typography color="error" sx={{ mt: 2 }}>
+                  {error}
                 </Typography>
               )}
             </Box>
-
-            <Button
-              variant="contained"
-              onClick={handleUpload}
-              disabled={loading || !file}
-            >
-              {loading ? "Uploading..." : "Upload"}
-            </Button>
-
-            {loading && <CircularProgress size={24} sx={{ mt: 1 }} />}
-          </Box>
-
-          {error && (
-            <Typography variant="body1" color="error" sx={{ mt: 2 }}>
-              {error}
-            </Typography>
           )}
 
-          {isDataReady && jsonData && (
-            <Box sx={{ mt: 4 }}>
-              <Divider sx={{ mb: 3 }}>
-                <Typography variant="h6">Resume Preview</Typography>
-              </Divider>
+          {activeStep === 1 && jsonData && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Preview Your Resume
+              </Typography>
 
               <Box
-                display="flex"
-                flexDirection={{ xs: "column", md: "row" }}
-                gap={3}
+                sx={{
+                  border: "1px solid #ccc",
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  height: 600,
+                }}
               >
-                <Box
-                  flex={1}
-                  sx={{
-                    border: "1px solid #e0e0e0",
-                    borderRadius: 2,
-                    overflow: "hidden",
-                  }}
-                >
-                  <BlobProvider document={<ResumePDF data={jsonData} />}>
-                    {({ url, loading, error }) => {
-                      if (loading)
-                        return (
-                          <Box
-                            display="flex"
-                            justifyContent="center"
-                            alignItems="center"
-                            height="500px"
-                          >
-                            <CircularProgress />
-                          </Box>
-                        );
-
-                      if (error)
-                        return (
-                          <Box
-                            display="flex"
-                            justifyContent="center"
-                            alignItems="center"
-                            height="500px"
-                          >
-                            <Typography color="error">
-                              Failed to generate preview
-                            </Typography>
-                          </Box>
-                        );
-
-                      if (!url) return null;
-
-                      return (
-                        <iframe
-                          src={`${url}#view=FitH`}
-                          title="Resume PDF Preview"
-                          width="100%"
-                          height="600px"
-                          style={{ border: "none" }}
-                        />
-                      );
-                    }}
-                  </BlobProvider>
-                </Box>
-
-                <Box
-                  flex={0.4}
-                  display="flex"
-                  flexDirection="column"
-                  justifyContent="center"
-                  alignItems="center"
-                  sx={{ p: 2 }}
-                >
-                  <Typography
-                    variant="body1"
-                    color="success.main"
-                    textAlign="center"
-                    gutterBottom
-                  >
-                    Resume processed successfully!
-                  </Typography>
-
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    textAlign="center"
-                    sx={{ mb: 3 }}
-                  >
-                    Your resume has been formatted and is ready for download.
-                  </Typography>
-
-                  <PDFDownloadLink
-                    document={<ResumePDF data={jsonData} />}
-                    fileName={`${jsonData.name || "resume"}.pdf`}
-                    style={{ textDecoration: "none", width: "100%" }}
-                  >
-                    {({ loading }) => (
-                      <Button
-                        variant="contained"
-                        color="success"
-                        fullWidth
-                        disabled={loading}
-                        sx={{ py: 1.5 }}
+                <BlobProvider document={<ResumePDF data={jsonData} />}>
+                  {({ url, loading }) =>
+                    loading ? (
+                      <Box
+                        height="100%"
+                        display="flex"
+                        justifyContent="center"
+                        alignItems="center"
                       >
-                        {loading ? "Preparing PDF..." : "Download Resume PDF"}
-                      </Button>
-                    )}
-                  </PDFDownloadLink>
-                </Box>
+                        <CircularProgress />
+                      </Box>
+                    ) : (
+                      <iframe
+                        src={url}
+                        title="PDF Preview"
+                        width="100%"
+                        height="100%"
+                        style={{ border: "none" }}
+                      />
+                    )
+                  }
+                </BlobProvider>
               </Box>
+
+              <Button
+                variant="contained"
+                sx={{ mt: 3 }}
+                onClick={() => setActiveStep(2)}
+              >
+                Continue to Download
+              </Button>
+            </Box>
+          )}
+
+          {activeStep === 2 && jsonData && (
+            <Box textAlign="center">
+              <Typography variant="h6" gutterBottom>
+                Ready to Download
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                Your resume has been processed and is ready for download.
+              </Typography>
+              <PDFDownloadLink
+                document={<ResumePDF data={jsonData} />}
+                fileName={`${jsonData.name || "resume"}.pdf`}
+                style={{ textDecoration: "none" }}
+              >
+                {({ loading }) => (
+                  <Button
+                    variant="contained"
+                    color="success"
+                    disabled={loading}
+                    sx={{ px: 4, py: 1.5 }}
+                  >
+                    {loading ? "Preparing..." : "Download Resume PDF"}
+                  </Button>
+                )}
+              </PDFDownloadLink>
             </Box>
           )}
         </CardContent>
       </Card>
     </Box>
   );
-};
-
-export default Upload;
+}
