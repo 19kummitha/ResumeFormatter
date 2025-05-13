@@ -163,12 +163,14 @@ const ResumePDF = ({ data }) => {
                 <Text style={styles.sectionHeading}>Education</Text>
                 {Array.isArray(data.education) &&
                 data.education.length > 0 &&
-                data.education[0] !== "Not available" ? (
-                  <View style={styles.leftPanelListItem}>
-                    <View style={styles.squareBullet} />
-                    <Text style={styles.listItemText}>{data.education[0]}</Text>
-                  </View>
-                ) : null}
+                data.education[0] !== "Not available"
+                  ? data.education.map((edu, index) => (
+                      <View key={index} style={styles.leftPanelListItem}>
+                        <View style={styles.squareBullet} />
+                        <Text style={styles.listItemText}>{edu}</Text>
+                      </View>
+                    ))
+                  : null}
               </View>
 
               <View style={{ marginBottom: 5 }}>

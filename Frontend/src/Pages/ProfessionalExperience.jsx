@@ -77,7 +77,14 @@ const styles = StyleSheet.create({
 });
 
 const ProfessionalExperiencePage = ({ data }) => {
-  const experiences = data.experience_data || [];
+  const rawExperiences = data.experience_data || [];
+
+  // Sort experiences: ones with invalid responsibilities go to the end
+  const experiences = rawExperiences.slice().sort((a, b) => {
+    const isInvalid = (resps) =>
+      !Array.isArray(resps) || resps.length === 0 || resps === "Not available";
+    return isInvalid(a.responsibilities) - isInvalid(b.responsibilities);
+  });
 
   return (
     <Page size="A4" style={styles.page}>
