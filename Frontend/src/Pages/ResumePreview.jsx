@@ -134,16 +134,7 @@ const PageLayout = ({ children }) => (
 );
 
 const ResumePDF = ({ data }) => {
-  const projects =
-    data?.projects &&
-    data.projects !== "Not available" &&
-    Array.isArray(data.projects) &&
-    !data.projects.includes("Not available")
-      ? data.projects
-      : [];
-
   const experienceChunks = chunkArray(data?.professional_experience || [], 10);
-  const projectChunks = chunkArray(projects, 10);
   const ustLogoBase64 =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAABCCAYAAAAL1LXDAAAAAXNSR0IArs4c6QAAA7JJREFUaEPtW4111DAMliYANmgngE4ANwFlArgJoBPQm4DeBLQTlE5AmYAyAd2AbiDyBfle4vNfciZx3tnv3evrXWLpk+RPsuKwiJyQezwx85Pnt/ZrEXlORPjsDWZ+DN079jeV+YGIXhLRK0s+ZD4Q0R0z3zv1EpHfROQCfc/MqwjgayJ67wHMY0G57lPHfCYigE0ZAL9hZui4G7wEwCICT373RVMEPYCvTMQVD1g9+3MkWGOLHeglAPYtuZSw7l6DdX1eNGAROW/I6TYhZOFB8JCPgEFg70DCpQO+IqKPHsDb5vvLbibR8Aep4R6TPUBcl2aO0gGDqN4MzQIK/CsR3SyKpRvFvWlPmdeZa0NLoHQPfyKiLwEAMAi8mAy8dMBYh38S6BgVIUD/wN+GjVFtOUfRgKFxU0qGiMuHC6xtvN8rcYsHrKBReKDaGjrg+Stm3iyCpbvoRnraTHHNzGv8swgPG621EEGOdaaqiPvh6YsQ4AdmPgtNEkobTRhl3S1Z3kZ4o8B4PTDUVyHAj8x8GgE8qjAYuhAjOoDJ4XGUoTCAr7zENBsARq2Ki10D2ypnjovsYtA8eJEZ2ElKUyGy1u8AOET7yGcAvdf5EBEUBCgMXCPaPBhijGbPjiYD9OwxrmsOEYG3EXluvSIX4Ka2c6CtEwDH+okRx9quYYcAtNYruhy74l/1uHBFnrZ/ANaXwrYtsQS6HmP1PE0Jv4S1ieXmY2TTv/rVlJ/PFKTd47JFrA3glH1nKvjediz1Jvu6hMgbOnVLwrvUEdmZpE4eZfbUiTTyEMoI6RzjDDV2L1ceWM2A4NBVyNqeFRHkW4AOpZuQQcA70KvNNnvFwQgBmHDb7SrkcIdFXAALb8fybPe2Vi9l9l2W8VZDCvytWtZmPUMY2I6hTg027HMaQMtLEBka8aaPBfnmg0iDXt9ceiWXf0r5NCW4nIYycyUD/h/C55izAp7D6lPKrB6e0tpzyKoensPqU8qsHp7S2nPIqh6ew+pTyqwentLac8g6Pg9r72jMo4uQg9Dq6Z2PmsObLpnoS+fsGxkZWfvSOY1VAWeyZvVwJkMePM1RhnToBBu6lb5TNDd6jsJldTw99B4sOdhNB0wQzMORxx1ZHqkM1V0f08aa8l6DLxFw6LBaNC1WwN0QKzSkq4cdPOCtA2pI15D2HxCZKy3VNVzX8L8jxM53rpZIWt634bqe9h29WBzgoaWofX0FXHpaqh4eaIEa0sce0uh4+N79w2E0HOld1PgLGa5FbiKSBQEAAAAASUVORK5CYII=";
   return (
@@ -159,6 +150,7 @@ const ResumePDF = ({ data }) => {
 
           <View style={styles.content}>
             <View style={styles.leftPanel}>
+              {/* Education */}
               <View style={{ marginBottom: 15 }}>
                 <Text style={styles.sectionHeading}>Education</Text>
                 {Array.isArray(data.education) &&
@@ -173,6 +165,7 @@ const ResumePDF = ({ data }) => {
                   : null}
               </View>
 
+              {/* Technical Expertise */}
               <View style={{ marginBottom: 5 }}>
                 <Text style={styles.sectionHeading}>Technical Expertise</Text>
                 {Array.isArray(data.skills) &&
@@ -199,6 +192,7 @@ const ResumePDF = ({ data }) => {
                   : null}
               </View>
 
+              {/* Certifications */}
               {Array.isArray(data.certifications) &&
                 data.certifications.length > 0 &&
                 !data.certifications.includes("Not available") && (
@@ -213,6 +207,7 @@ const ResumePDF = ({ data }) => {
                   </View>
                 )}
 
+              {/* Summary */}
               {data.summary && data.summary !== "Not available" && (
                 <View style={{ marginBottom: 15 }}>
                   <Text style={styles.sectionHeading}>Summary</Text>
@@ -234,23 +229,6 @@ const ResumePDF = ({ data }) => {
                   <Text style={styles.listItemText}>{exp}</Text>
                 </View>
               ))}
-
-              {projectChunks[0] && projectChunks[0].length > 0 && (
-                <View>
-                  <Text style={{ ...styles.h2, marginTop: 15 }}>Projects</Text>
-                  {projectChunks[0].map((project, i) => (
-                    <View key={i} style={styles.listItem}>
-                      <View
-                        style={{
-                          ...styles.squareBullet,
-                          backgroundColor: "black",
-                        }}
-                      />
-                      <Text style={styles.listItemText}>{project}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
             </View>
           </View>
         </PageLayout>
@@ -258,8 +236,8 @@ const ResumePDF = ({ data }) => {
 
       <ProfessionalExperiencePage data={data} />
 
-      {experienceChunks.length > 1 || projectChunks.length > 1
-        ? renderAdditionalPages(experienceChunks, projectChunks)
+      {experienceChunks.length > 1
+        ? renderAdditionalPages(experienceChunks)
         : null}
     </Document>
   );
@@ -278,19 +256,15 @@ function chunkArray(array, size) {
   const arr = typeof array === "string" ? [array] : array;
   const chunked = [];
   for (let i = 0; i < arr.length; i += size) {
-    chunked.push(arr.slice(i, i + size));
+    chunked.push(arr.slice(i + 0, i + size));
   }
   return chunked;
 }
 
-function renderAdditionalPages(experienceChunks, projectChunks) {
+function renderAdditionalPages(experienceChunks) {
   const pages = [];
 
-  for (
-    let pageIndex = 1;
-    pageIndex < Math.max(experienceChunks.length, projectChunks.length);
-    pageIndex++
-  ) {
+  for (let pageIndex = 1; pageIndex < experienceChunks.length; pageIndex++) {
     pages.push(
       <Page key={`page-${pageIndex + 1}`} size="A4" style={styles.page}>
         <PageLayout>
@@ -306,31 +280,14 @@ function renderAdditionalPages(experienceChunks, projectChunks) {
             </View>
 
             <View style={styles.rightPanel}>
-              {pageIndex < experienceChunks.length &&
-                experienceChunks[pageIndex].map((exp, i) => (
-                  <View key={i} style={styles.listItem}>
-                    <View
-                      style={{
-                        ...styles.squareBullet,
-                        backgroundColor: "black",
-                      }}
-                    />
-                    <Text style={styles.listItemText}>{exp}</Text>
-                  </View>
-                ))}
-
-              {pageIndex < projectChunks.length &&
-                projectChunks[pageIndex].map((project, i) => (
-                  <View key={i} style={styles.listItem}>
-                    <View
-                      style={{
-                        ...styles.squareBullet,
-                        backgroundColor: "black",
-                      }}
-                    />
-                    <Text style={styles.listItemText}>{project}</Text>
-                  </View>
-                ))}
+              {experienceChunks[pageIndex].map((exp, i) => (
+                <View key={i} style={styles.listItem}>
+                  <View
+                    style={{ ...styles.squareBullet, backgroundColor: "black" }}
+                  />
+                  <Text style={styles.listItemText}>{exp}</Text>
+                </View>
+              ))}
             </View>
           </View>
         </PageLayout>
