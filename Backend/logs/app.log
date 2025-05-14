@@ -1253,3 +1253,10 @@ AttributeError: module 'bcrypt' has no attribute '__about__'
 2025-05-14 12:23:39,035 - resume - INFO - Server shutting down
 2025-05-14 13:29:12,391 - resume - INFO - Server started successfully
 2025-05-14 13:30:51,119 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-14 14:18:26,012 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\285072\Desktop\Python\ResumeExtractor\Backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-05-14 14:18:47,079 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"

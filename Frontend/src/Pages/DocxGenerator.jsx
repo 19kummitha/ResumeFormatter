@@ -12,8 +12,47 @@ import {
   VerticalAlign,
   BorderStyle,
   ImageRun,
+  TabStopType, // Added import for tab stops
 } from "docx";
 import { saveAs } from "file-saver";
+
+// Add the trueBulletParagraph function
+export const trueBulletParagraph = (labelText, valueText, options = {}) => {
+  const bulletColor = options.bulletColor || "000000"; // Default black bullet
+  const labelColor = options.labelColor || bulletColor;
+  const valueColor = options.valueColor || bulletColor;
+
+  const labelBold = options.labelBold !== undefined ? options.labelBold : false;
+  const valueBold = options.valueBold !== undefined ? options.valueBold : false;
+
+  return new Paragraph({
+    spacing: { after: 120 },
+    indent: { left: 400, hanging: 200 },
+    tabStops: [{ type: TabStopType.LEFT, position: 400 }],
+    children: [
+      new TextRun({
+        text: "▪\t",
+        font: "Arial",
+        size: 20,
+        color: bulletColor, // Bullet color is customizable
+      }),
+      new TextRun({
+        text: labelText,
+        bold: labelBold,
+        font: "Arial",
+        size: 20,
+        color: labelColor,
+      }),
+      new TextRun({
+        text: valueText,
+        bold: valueBold,
+        font: "Arial",
+        size: 20,
+        color: valueColor,
+      }),
+    ],
+  });
+};
 
 export const generateResumeDocx = async (data) => {
   const doc = new Document({
@@ -33,27 +72,9 @@ const createStyledSections = (data) => {
     leftContent.push(createSectionHeading("Education", "FFFFFF"));
     data.education.forEach((edu) => {
       leftContent.push(
-        new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          spacing: { line: 360 }, // 1.5 line spacing
-          indent: {
-            left: 360, // indent whole paragraph
-            hanging: 240, // aligns second line under text, not bullet
-            right: 360,
-          },
-          children: [
-            new TextRun({
-              text: "▪ ",
-              bold: true,
-              color: "FFFFFF",
-              font: "Arial",
-            }),
-            new TextRun({
-              text: edu,
-              color: "FFFFFF",
-              font: "Arial",
-            }),
-          ],
+        trueBulletParagraph("", edu, {
+          bulletColor: "FFFFFF",
+          valueColor: "FFFFFF",
         })
       );
     });
@@ -64,34 +85,16 @@ const createStyledSections = (data) => {
     data.skills.forEach((skillGroup) => {
       const [category, items] = Object.entries(skillGroup)[0];
       leftContent.push(
-        new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          spacing: { line: 360 }, // 1.5 line spacing
-          indent: {
-            left: 360, // overall left indent
-            hanging: 240, // aligns second+ lines under first text, not bullet
-            right: 360,
-          },
-          children: [
-            new TextRun({
-              text: "▪ ",
-              bold: true,
-              color: "FFFFFF",
-              font: "Arial",
-            }),
-            new TextRun({
-              text: `${category}: `,
-              bold: true,
-              color: "FFFFFF",
-              font: "Arial",
-            }),
-            new TextRun({
-              text: Array.isArray(items) ? items.join(", ") : items,
-              color: "FFFFFF",
-              font: "Arial",
-            }),
-          ],
-        })
+        trueBulletParagraph(
+          `${category}: `,
+          Array.isArray(items) ? items.join(", ") : items,
+          {
+            bulletColor: "FFFFFF",
+            labelColor: "FFFFFF",
+            valueColor: "FFFFFF",
+            labelBold: true,
+          }
+        )
       );
     });
   }
@@ -100,24 +103,9 @@ const createStyledSections = (data) => {
     leftContent.push(createSectionHeading("Certifications", "FFFFFF"));
     data.certifications.forEach((cert) => {
       leftContent.push(
-        new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          spacing: { line: 360 }, // 1.5 line spacing
-          indent: {
-            left: 360, // overall left indent
-            hanging: 240, // aligns second+ lines under first text, not bullet
-            right: 360,
-          },
-          children: [
-            new TextRun({
-              text: "▪ ",
-              bold: true,
-              color: "FFFFFF",
-              spacing: { after: 400 },
-              font: "Arial",
-            }),
-            new TextRun({ text: `${cert}`, color: "FFFFFF", font: "Arial" }),
-          ],
+        trueBulletParagraph("", cert, {
+          bulletColor: "FFFFFF",
+          valueColor: "FFFFFF",
         })
       );
     });
@@ -133,23 +121,9 @@ const createStyledSections = (data) => {
     );
     data.professional_experience.forEach((item) => {
       rightContent.push(
-        new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          spacing: { line: 480 }, // 1.5 line spacing
-          indent: {
-            left: 360, // overall left indent
-            hanging: 240, // aligns second+ lines under first text, not bullet
-            right: 360,
-          },
-          children: [
-            new TextRun({
-              text: "▪ ",
-              bold: true,
-              spacing: { after: 400 },
-              font: "Arial",
-            }),
-            new TextRun({ text: item, font: "Arial" }),
-          ],
+        trueBulletParagraph("", item, {
+          bulletColor: "000000",
+          valueColor: "000000",
         })
       );
     });
@@ -159,17 +133,9 @@ const createStyledSections = (data) => {
     rightContent.push(createSectionHeading("Projects", "000000"));
     data.projects.forEach((project) => {
       rightContent.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "▪ ",
-              bold: true,
-              spacing: { after: 400 },
-              font: "Arial",
-            }),
-            new TextRun({ text: project, font: "Arial" }),
-          ],
-          indent: { left: 360 },
+        trueBulletParagraph("", project, {
+          bulletColor: "000000",
+          valueColor: "000000",
         })
       );
     });
@@ -197,6 +163,21 @@ const createStyledSections = (data) => {
   // 4. Now define your header table
   const headerTable = new Table({
     rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [new Paragraph("")],
+            shading: { fill: "000000" },
+            borders: {
+              top: BorderStyle.NONE,
+              bottom: BorderStyle.NONE,
+              left: BorderStyle.NONE,
+              right: BorderStyle.NONE,
+            },
+          }),
+        ],
+        height: { value: 200, rule: "exact" }, // acts as vertical spacer
+      }),
       // Row 1: Logo (top-left)
       new TableRow({
         children: [
@@ -204,16 +185,17 @@ const createStyledSections = (data) => {
             children: [
               new Paragraph({
                 alignment: AlignmentType.LEFT,
+                indent: { left: 300 }, // 5px left "margin"
+                spacing: { before: 100, after: 100 }, // 5px top/bottom "margin"
                 children: [
                   new ImageRun({
                     data: imageBytes,
                     transformation: {
-                      width: 60,
-                      height: 60,
+                      width: 45,
+                      height: 45,
                     },
                   }),
                 ],
-                spacing: { before: 100, after: 100 },
               }),
             ],
             verticalAlign: VerticalAlign.TOP,
@@ -226,7 +208,7 @@ const createStyledSections = (data) => {
             },
           }),
         ],
-        height: { value: 1200, rule: "exact" },
+        height: { value: 800, rule: "exact" },
       }),
 
       // Row 2: Name (centered)
@@ -258,7 +240,23 @@ const createStyledSections = (data) => {
             },
           }),
         ],
-        height: { value: 1000, rule: "exact" },
+        height: { value: 800, rule: "exact" },
+      }),
+      // Row 3: Spacer
+      new TableRow({
+        children: [
+          new TableCell({
+            children: [new Paragraph("")],
+            shading: { fill: "000000" },
+            borders: {
+              top: BorderStyle.NONE,
+              bottom: BorderStyle.NONE,
+              left: BorderStyle.NONE,
+              right: BorderStyle.NONE,
+            },
+          }),
+        ],
+        height: { value: 400, rule: "exact" }, // acts as vertical spacer
       }),
     ],
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -369,92 +367,58 @@ const createStyledSections = (data) => {
 
     sortedExperiences.forEach((exp) => {
       experienceDetail.push(
-        new Paragraph({
-          spacing: { after: 100 },
-          children: [
-            new TextRun({
-              text: "▪ ",
-              bold: true,
-              spacing: { after: 400 },
-              font: "Arial",
-            }),
-            new TextRun({ text: "Company: ", bold: true, font: "Arial" }),
-            new TextRun({ text: exp.company, font: "Arial" }),
-          ],
+        trueBulletParagraph("Company: ", exp.company, {
+          bulletColor: "000000",
+          labelColor: "000000",
+          valueColor: "000000",
+          labelBold: true,
         })
       );
 
       if (!(exp.role === "Not available")) {
         experienceDetail.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "▪ ",
-                bold: true,
-                spacing: { after: 400 },
-                font: "Arial",
-              }),
-              new TextRun({ text: "Role: ", bold: true, font: "Arial" }),
-              new TextRun({ text: exp.role, font: "Arial" }),
-            ],
+          trueBulletParagraph("Role: ", exp.role, {
+            bulletColor: "000000",
+            labelColor: "000000",
+            valueColor: "000000",
+            labelBold: true,
           })
         );
       }
 
       if (exp.startDate || exp.endDate) {
         experienceDetail.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "▪ ",
-                bold: true,
-                spacing: { after: 400 },
-                font: "Arial",
-              }),
-              new TextRun({ text: "Duration: ", bold: true, font: "Arial" }),
-              new TextRun({
-                text: `${exp.startDate || ""} - ${exp.endDate || ""}`.trim(),
-                font: "Arial",
-              }),
-            ],
-          })
+          trueBulletParagraph(
+            "Duration: ",
+            `${exp.startDate || ""} - ${exp.endDate || ""}`.trim(),
+            {
+              bulletColor: "000000",
+              labelColor: "000000",
+              valueColor: "000000",
+              labelBold: true,
+            }
+          )
         );
       }
 
       if (!(exp.clientEngagement === "Not available")) {
         experienceDetail.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "▪ ",
-                bold: true,
-                spacing: { after: 400 },
-                font: "Arial",
-              }),
-              new TextRun({
-                text: "Client Engagement: ",
-                bold: true,
-                font: "Arial",
-              }),
-              new TextRun({ text: exp.clientEngagement, font: "Arial" }),
-            ],
+          trueBulletParagraph("Client Engagement: ", exp.clientEngagement, {
+            bulletColor: "000000",
+            labelColor: "000000",
+            valueColor: "000000",
+            labelBold: true,
           })
         );
       }
 
       if (!(exp.program === "Not available")) {
         experienceDetail.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "▪ ",
-                bold: true,
-                spacing: { after: 400 },
-                font: "Arial",
-              }),
-              new TextRun({ text: "Program: ", bold: true, font: "Arial" }),
-              new TextRun({ text: exp.program, font: "Arial" }),
-            ],
+          trueBulletParagraph("Program: ", exp.program, {
+            bulletColor: "000000",
+            labelColor: "000000",
+            valueColor: "000000",
+            labelBold: true,
           })
         );
       }
@@ -464,41 +428,20 @@ const createStyledSections = (data) => {
         exp.responsibilities.length > 0
       ) {
         experienceDetail.push(
-          new Paragraph({
-            spacing: { before: 100, after: 100 },
-            children: [
-              new TextRun({
-                text: "▪ ",
-                bold: true,
-                spacing: { after: 400 },
-                font: "Arial",
-              }),
-              new TextRun({
-                text: "Responsibilities:",
-                bold: true,
-                font: "Arial",
-              }),
-            ],
+          trueBulletParagraph("Responsibilities:", "", {
+            bulletColor: "000000",
+            labelColor: "000000",
+            valueColor: "000000",
+            labelBold: true,
           })
         );
 
         exp.responsibilities.forEach((res) => {
           if (res?.trim()) {
             experienceDetail.push(
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "▪ ",
-                    bold: true,
-                    spacing: { after: 400 },
-                    font: "Arial",
-                  }),
-                  new TextRun({
-                    text: res,
-                    spacing: { after: 100 },
-                    font: "Arial",
-                  }),
-                ],
+              trueBulletParagraph("", res, {
+                bulletColor: "000000",
+                valueColor: "000000",
               })
             );
           }
