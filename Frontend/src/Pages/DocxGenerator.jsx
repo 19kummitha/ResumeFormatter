@@ -378,72 +378,86 @@ const createStyledSections = (data) => {
               spacing: { after: 400 },
               font: "Arial",
             }),
-            new TextRun({ text: `Company: `, bold: true, font: "Arial" }),
+            new TextRun({ text: "Company: ", bold: true, font: "Arial" }),
             new TextRun({ text: exp.company, font: "Arial" }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "▪ ",
-              bold: true,
-              spacing: { after: 400 },
-              font: "Arial",
-            }),
-            new TextRun({ text: `Role: `, bold: true, font: "Arial" }),
-            new TextRun({ text: exp.role, font: "Arial" }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "▪ ",
-              bold: true,
-              spacing: { after: 400 },
-              font: "Arial",
-            }),
-            new TextRun({ text: `Duration: `, bold: true, font: "Arial" }),
-            new TextRun({
-              text: `${exp.startDate} - ${exp.endDate}`,
-              font: "Arial",
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "▪ ",
-              bold: true,
-              spacing: { after: 400 },
-              font: "Arial",
-            }),
-            new TextRun({
-              text: `Client Engagement: `,
-              bold: true,
-              font: "Arial",
-            }),
-            new TextRun({
-              text: exp.clientEngagement || "Not available",
-              font: "Arial",
-            }),
-          ],
-        }),
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "▪ ",
-              bold: true,
-              spacing: { after: 400 },
-              font: "Arial",
-            }),
-            new TextRun({ text: `Program: `, bold: true, font: "Arial" }),
-            new TextRun({
-              text: exp.program || "Not available",
-              font: "Arial",
-            }),
           ],
         })
       );
+
+      if (!(exp.role === "Not available")) {
+        experienceDetail.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "▪ ",
+                bold: true,
+                spacing: { after: 400 },
+                font: "Arial",
+              }),
+              new TextRun({ text: "Role: ", bold: true, font: "Arial" }),
+              new TextRun({ text: exp.role, font: "Arial" }),
+            ],
+          })
+        );
+      }
+
+      if (exp.startDate || exp.endDate) {
+        experienceDetail.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "▪ ",
+                bold: true,
+                spacing: { after: 400 },
+                font: "Arial",
+              }),
+              new TextRun({ text: "Duration: ", bold: true, font: "Arial" }),
+              new TextRun({
+                text: `${exp.startDate || ""} - ${exp.endDate || ""}`.trim(),
+                font: "Arial",
+              }),
+            ],
+          })
+        );
+      }
+
+      if (!(exp.clientEngagement === "Not available")) {
+        experienceDetail.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "▪ ",
+                bold: true,
+                spacing: { after: 400 },
+                font: "Arial",
+              }),
+              new TextRun({
+                text: "Client Engagement: ",
+                bold: true,
+                font: "Arial",
+              }),
+              new TextRun({ text: exp.clientEngagement, font: "Arial" }),
+            ],
+          })
+        );
+      }
+
+      if (!(exp.program === "Not available")) {
+        experienceDetail.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "▪ ",
+                bold: true,
+                spacing: { after: 400 },
+                font: "Arial",
+              }),
+              new TextRun({ text: "Program: ", bold: true, font: "Arial" }),
+              new TextRun({ text: exp.program, font: "Arial" }),
+            ],
+          })
+        );
+      }
 
       if (
         Array.isArray(exp.responsibilities) &&
@@ -469,23 +483,25 @@ const createStyledSections = (data) => {
         );
 
         exp.responsibilities.forEach((res) => {
-          experienceDetail.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "▪ ",
-                  bold: true,
-                  spacing: { after: 400 },
-                  font: "Arial",
-                }),
-                new TextRun({
-                  text: res,
-                  spacing: { after: 100 },
-                  font: "Arial",
-                }),
-              ],
-            })
-          );
+          if (res?.trim()) {
+            experienceDetail.push(
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "▪ ",
+                    bold: true,
+                    spacing: { after: 400 },
+                    font: "Arial",
+                  }),
+                  new TextRun({
+                    text: res,
+                    spacing: { after: 100 },
+                    font: "Arial",
+                  }),
+                ],
+              })
+            );
+          }
         });
       }
 
