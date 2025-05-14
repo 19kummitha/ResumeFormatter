@@ -30,7 +30,7 @@ def extract_resume_details_with_azure(text: str) -> dict:
     "- mobile\n"
     "- skills (group related skills together, and return as a list of objects with category as the key and related skills as the value. For example: [{ 'Programming Languages': ['Java', 'C++'] }, { 'Cloud': ['AWS', 'Docker'] }])\n"
     "- education (as a list of degrees/institutions)\n"
-    "- professional_experience (as a list of bullet points describing work experience, including company name, role, and duration if available. Try to get the entire resume summary. Note that it should be in format 'professional_experience':['point1','point2',..])\n"
+    "- professional_experience (Try to get the entire resume summary. Note that it should be in format 'professional_experience':['point1','point2',..])\n"
     "- certifications (as a list)\n"
     "- experience_data (as a list of objects with each object containing the following keys: 'company', 'startDate', 'endDate', 'role', 'clientEngagement', 'program', and 'responsibilities' which is a list of bullet points describing duties)\n"
     "Return the data as valid JSON. If there is no data available for a section, try to infer it from the resume. If not possible, return 'Not available' for that section."

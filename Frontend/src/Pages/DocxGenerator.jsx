@@ -34,17 +34,26 @@ const createStyledSections = (data) => {
     data.education.forEach((edu) => {
       leftContent.push(
         new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { line: 360 }, // 1.5 line spacing
+          indent: {
+            left: 360, // indent whole paragraph
+            hanging: 240, // aligns second line under text, not bullet
+            right: 360,
+          },
           children: [
             new TextRun({
               text: "▪ ",
               bold: true,
               color: "FFFFFF",
               font: "Arial",
-              spacing: { after: 400 },
             }),
-            new TextRun({ text: edu, color: "FFFFFF", font: "Arial" }),
+            new TextRun({
+              text: edu,
+              color: "FFFFFF",
+              font: "Arial",
+            }),
           ],
-          indent: { left: 360 },
         })
       );
     });
@@ -56,12 +65,18 @@ const createStyledSections = (data) => {
       const [category, items] = Object.entries(skillGroup)[0];
       leftContent.push(
         new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { line: 360 }, // 1.5 line spacing
+          indent: {
+            left: 360, // overall left indent
+            hanging: 240, // aligns second+ lines under first text, not bullet
+            right: 360,
+          },
           children: [
             new TextRun({
               text: "▪ ",
               bold: true,
               color: "FFFFFF",
-              spacing: { after: 400 },
               font: "Arial",
             }),
             new TextRun({
@@ -76,7 +91,6 @@ const createStyledSections = (data) => {
               font: "Arial",
             }),
           ],
-          indent: { left: 360 },
         })
       );
     });
@@ -87,6 +101,13 @@ const createStyledSections = (data) => {
     data.certifications.forEach((cert) => {
       leftContent.push(
         new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { line: 360 }, // 1.5 line spacing
+          indent: {
+            left: 360, // overall left indent
+            hanging: 240, // aligns second+ lines under first text, not bullet
+            right: 360,
+          },
           children: [
             new TextRun({
               text: "▪ ",
@@ -97,7 +118,6 @@ const createStyledSections = (data) => {
             }),
             new TextRun({ text: `${cert}`, color: "FFFFFF", font: "Arial" }),
           ],
-          indent: { left: 360 },
         })
       );
     });
@@ -114,6 +134,13 @@ const createStyledSections = (data) => {
     data.professional_experience.forEach((item) => {
       rightContent.push(
         new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { line: 480 }, // 1.5 line spacing
+          indent: {
+            left: 360, // overall left indent
+            hanging: 240, // aligns second+ lines under first text, not bullet
+            right: 360,
+          },
           children: [
             new TextRun({
               text: "▪ ",
@@ -123,7 +150,6 @@ const createStyledSections = (data) => {
             }),
             new TextRun({ text: item, font: "Arial" }),
           ],
-          indent: { left: 360 },
         })
       );
     });
@@ -171,16 +197,16 @@ const createStyledSections = (data) => {
   // 4. Now define your header table
   const headerTable = new Table({
     rows: [
+      // Row 1: Logo (top-left)
       new TableRow({
         children: [
-          // Logo Cell (Left)
           new TableCell({
             children: [
               new Paragraph({
                 alignment: AlignmentType.LEFT,
                 children: [
                   new ImageRun({
-                    data: imageBytes, // ✅ CORRECT BINARY DATA
+                    data: imageBytes,
                     transformation: {
                       width: 60,
                       height: 60,
@@ -190,12 +216,22 @@ const createStyledSections = (data) => {
                 spacing: { before: 100, after: 100 },
               }),
             ],
-            verticalAlign: VerticalAlign.CENTER,
-            width: { size: 30, type: WidthType.PERCENTAGE },
+            verticalAlign: VerticalAlign.TOP,
             shading: { fill: "000000" },
+            borders: {
+              top: BorderStyle.NONE,
+              bottom: BorderStyle.NONE,
+              left: BorderStyle.NONE,
+              right: BorderStyle.NONE,
+            },
           }),
+        ],
+        height: { value: 1200, rule: "exact" },
+      }),
 
-          // Name Cell (Right)
+      // Row 2: Name (centered)
+      new TableRow({
+        children: [
           new TableCell({
             children: [
               new Paragraph({
@@ -212,22 +248,27 @@ const createStyledSections = (data) => {
                 spacing: { before: 100, after: 300 },
               }),
             ],
-            shading: { fill: "000000" },
             verticalAlign: VerticalAlign.CENTER,
-            width: { size: 70, type: WidthType.PERCENTAGE },
+            shading: { fill: "000000" },
+            borders: {
+              top: BorderStyle.NONE,
+              bottom: BorderStyle.NONE,
+              left: BorderStyle.NONE,
+              right: BorderStyle.NONE,
+            },
           }),
         ],
-        height: { value: 2000, rule: "exact" },
+        height: { value: 1000, rule: "exact" },
       }),
     ],
     width: { size: 100, type: WidthType.PERCENTAGE },
     borders: {
-      top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-      bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-      left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-      right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-      insideHorizontal: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
-      insideVertical: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+      top: BorderStyle.NONE,
+      bottom: BorderStyle.NONE,
+      left: BorderStyle.NONE,
+      right: BorderStyle.NONE,
+      insideHorizontal: BorderStyle.NONE,
+      insideVertical: BorderStyle.NONE,
     },
   });
 
@@ -249,7 +290,7 @@ const createStyledSections = (data) => {
           }),
           // ACTUAL LEFT CONTENT
           new TableCell({
-            width: { size: 30, type: WidthType.PERCENTAGE },
+            width: { size: 35, type: WidthType.PERCENTAGE },
             shading: { fill: "166a6a" },
             children: leftContent,
             borders: {
@@ -265,7 +306,7 @@ const createStyledSections = (data) => {
             children: rightContent,
             margins: {
               top: 300,
-              bottom: 300,
+              bottom: 1200,
               left: 300,
               right: 300,
             },
@@ -299,6 +340,7 @@ const createStyledSections = (data) => {
       insideVertical: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
     },
   });
+
   const experienceDetail = [];
 
   if (Array.isArray(data.experience_data) && data.experience_data.length > 0) {
@@ -317,7 +359,15 @@ const createStyledSections = (data) => {
       })
     );
 
-    data.experience_data.forEach((exp) => {
+    // Sort experience_data
+    const isInvalid = (resps) =>
+      !Array.isArray(resps) || resps.length === 0 || resps === "Not available";
+
+    const sortedExperiences = data.experience_data.slice().sort((a, b) => {
+      return isInvalid(a.responsibilities) - isInvalid(b.responsibilities);
+    });
+
+    sortedExperiences.forEach((exp) => {
       experienceDetail.push(
         new Paragraph({
           spacing: { after: 100 },
@@ -430,7 +480,6 @@ const createStyledSections = (data) => {
                 }),
                 new TextRun({
                   text: res,
-                  //bullet: { level: 0 },
                   spacing: { after: 100 },
                   font: "Arial",
                 }),
@@ -443,6 +492,7 @@ const createStyledSections = (data) => {
       experienceDetail.push(new Paragraph("")); // spacer
     });
   }
+
   return [
     {
       properties: {
