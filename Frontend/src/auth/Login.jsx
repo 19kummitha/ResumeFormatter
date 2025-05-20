@@ -63,7 +63,11 @@ export default function Login() {
               color="primary"
               onClick={handleSubmit}
               size="large"
-              sx={{ borderRadius: 2 }}
+              sx={{
+                background: "linear-gradient(to right, #4a148c)",
+                boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
+                borderRadius: 2,
+              }}
             >
               Login
             </Button>
