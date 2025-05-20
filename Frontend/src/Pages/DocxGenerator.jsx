@@ -24,10 +24,13 @@ export const trueBulletParagraph = (labelText, valueText, options = {}) => {
 
   const labelBold = options.labelBold !== undefined ? options.labelBold : false;
   const valueBold = options.valueBold !== undefined ? options.valueBold : false;
+  const alignment = options.alignment || AlignmentType.LEFT;
+  const lineSpacing = options.lineSpacing || 240; // Default line spacing (1.0)
 
   return new Paragraph({
-    spacing: { after: 120 },
+    spacing: { after: 120, line: lineSpacing },
     indent: { left: 400, hanging: 200 },
+    alignment: alignment,
     tabStops: [{ type: TabStopType.LEFT, position: 400 }],
     children: [
       new TextRun({
@@ -75,6 +78,8 @@ const createStyledSections = (data) => {
         trueBulletParagraph("", edu, {
           bulletColor: "FFFFFF",
           valueColor: "FFFFFF",
+          lineSpacing: 276, // 1.15 line spacing
+          indent: { left: 300 },
         })
       );
     });
@@ -93,6 +98,7 @@ const createStyledSections = (data) => {
             labelColor: "FFFFFF",
             valueColor: "FFFFFF",
             labelBold: true,
+            lineSpacing: 276, // 1.15 line spacing
           }
         )
       );
@@ -106,6 +112,7 @@ const createStyledSections = (data) => {
         trueBulletParagraph("", cert, {
           bulletColor: "FFFFFF",
           valueColor: "FFFFFF",
+          lineSpacing: 276, // 1.15 line spacing
         })
       );
     });
@@ -124,6 +131,8 @@ const createStyledSections = (data) => {
         trueBulletParagraph("", item, {
           bulletColor: "000000",
           valueColor: "000000",
+          lineSpacing: 480, // 2.0 line spacing
+          alignment: AlignmentType.JUSTIFIED,
         })
       );
     });
@@ -136,6 +145,8 @@ const createStyledSections = (data) => {
         trueBulletParagraph("", project, {
           bulletColor: "000000",
           valueColor: "000000",
+          lineSpacing: 480, // 2.0 line spacing
+          alignment: AlignmentType.JUSTIFIED,
         })
       );
     });
@@ -291,6 +302,10 @@ const createStyledSections = (data) => {
             width: { size: 35, type: WidthType.PERCENTAGE },
             shading: { fill: "166a6a" },
             children: leftContent,
+            margins: {
+              left: 300, // Add left padding (e.g., 300 twips = 0.25 inch)
+              right: 150, // optional right padding to keep text away from border
+            },
             borders: {
               top: BorderStyle.NONE,
               bottom: BorderStyle.NONE,
@@ -300,7 +315,7 @@ const createStyledSections = (data) => {
           }),
           // RIGHT CONTENT
           new TableCell({
-            width: { size: 60, type: WidthType.PERCENTAGE },
+            width: { size: 55, type: WidthType.PERCENTAGE },
             children: rightContent,
             margins: {
               top: 300,
@@ -372,6 +387,8 @@ const createStyledSections = (data) => {
           labelColor: "000000",
           valueColor: "000000",
           labelBold: true,
+          lineSpacing: 276, // 2.0 line spacing
+          alignment: AlignmentType.JUSTIFIED,
         })
       );
 
@@ -382,6 +399,8 @@ const createStyledSections = (data) => {
             labelColor: "000000",
             valueColor: "000000",
             labelBold: true,
+            lineSpacing: 276, // 2.0 line spacing
+            alignment: AlignmentType.JUSTIFIED,
           })
         );
       }
@@ -396,6 +415,8 @@ const createStyledSections = (data) => {
               labelColor: "000000",
               valueColor: "000000",
               labelBold: true,
+              lineSpacing: 276, // 2.0 line spacing
+              alignment: AlignmentType.JUSTIFIED,
             }
           )
         );
@@ -408,6 +429,8 @@ const createStyledSections = (data) => {
             labelColor: "000000",
             valueColor: "000000",
             labelBold: true,
+            lineSpacing: 276, // 2.0 line spacing
+            alignment: AlignmentType.JUSTIFIED,
           })
         );
       }
@@ -419,6 +442,8 @@ const createStyledSections = (data) => {
             labelColor: "000000",
             valueColor: "000000",
             labelBold: true,
+            lineSpacing: 276, // 2.0 line spacing
+            alignment: AlignmentType.JUSTIFIED,
           })
         );
       }
@@ -433,6 +458,8 @@ const createStyledSections = (data) => {
             labelColor: "000000",
             valueColor: "000000",
             labelBold: true,
+            lineSpacing: 276, // 2.0 line spacing
+            alignment: AlignmentType.JUSTIFIED,
           })
         );
 
@@ -442,6 +469,8 @@ const createStyledSections = (data) => {
               trueBulletParagraph("", res, {
                 bulletColor: "000000",
                 valueColor: "000000",
+                lineSpacing: 276, // 2.0 line spacing
+                alignment: AlignmentType.JUSTIFIED,
               })
             );
           }

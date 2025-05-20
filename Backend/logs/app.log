@@ -1260,3 +1260,45 @@ Traceback (most recent call last):
               ^^^^^^^^^^^^^^^^^
 AttributeError: module 'bcrypt' has no attribute '__about__'
 2025-05-14 14:18:47,079 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-14 14:19:42,012 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-14 17:11:24,339 - resume - INFO - Server shutting down
+2025-05-15 10:25:55,669 - resume - INFO - Server started successfully
+2025-05-15 10:26:14,337 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\285072\Desktop\Python\ResumeExtractor\Backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-05-15 10:26:38,363 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 10:27:22,560 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 10:33:04,980 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 13:16:05,542 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 13:18:38,623 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 13:29:44,445 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 13:30:42,623 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 14:13:33,550 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 14:21:47,087 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 14:29:49,906 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 14:53:32,484 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 14:54:09,729 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 14:55:55,228 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 15:14:10,365 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 15:14:37,159 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 15:15:03,630 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 15:15:31,787 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-15 15:16:51,994 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-20 10:43:46,062 - resume - INFO - Server started successfully
+2025-05-20 10:44:19,407 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-20 10:45:57,065 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-20 10:54:53,274 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-20 11:01:58,509 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\285072\Desktop\Python\ResumeExtractor\Backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-05-20 11:02:19,623 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-20 11:03:14,429 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-20 11:10:31,298 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-20 11:30:26,988 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-20 12:03:48,684 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
