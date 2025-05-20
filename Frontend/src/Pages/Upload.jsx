@@ -23,7 +23,35 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { generateResumeDocx } from "./DocxGenerator";
+import PreviewIcon from "@mui/icons-material/Preview";
+import GetAppIcon from "@mui/icons-material/GetApp";
 
+const CustomStepIcon = (props) => {
+  const { icon, active, completed } = props;
+
+  const iconMap = {
+    1: <CloudUploadIcon sx={{ fontSize: 28 }} />,
+    2: (
+      <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+        <PreviewIcon sx={{ fontSize: 20 }} />
+        <GetAppIcon sx={{ fontSize: 20 }} />
+      </Box>
+    ),
+  };
+
+  return (
+    <Box
+      sx={{
+        color: active || completed ? "#1e3a8a" : "#94a3b8",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {iconMap[icon]}
+    </Box>
+  );
+};
 // Reduced to just two steps
 const steps = ["Upload", "Preview & Download"];
 
@@ -37,6 +65,7 @@ export default function Upload() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [processingStage, setProcessingStage] = useState("");
 
   const token = localStorage.getItem("token");
 
@@ -49,6 +78,46 @@ export default function Upload() {
     };
   }, [activeStep]);
 
+  // Function to simulate progress increase during processing stages
+  const simulateProgressForStage = async (
+    startPercent,
+    endPercent,
+    stageName
+  ) => {
+    setProcessingStage(stageName);
+    const increment = (endPercent - startPercent) / 10;
+    let currentProgress = startPercent;
+
+    for (let i = 0; i < 10; i++) {
+      currentProgress += increment;
+      setUploadProgress(Math.round(currentProgress));
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+  };
+
+  // Check progress status from backend
+  const checkProgressStatus = async (taskId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/resume/progress/${taskId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token || ""}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const statusData = await response.json();
+        return statusData;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error checking progress:", error);
+      return null;
+    }
+  };
+
   const handleUpload = async () => {
     if (!file) return;
 
@@ -58,54 +127,87 @@ export default function Upload() {
     setUploadProgress(0);
     setUploading(true);
     setProcessing(false);
+    setProcessingStage("Starting upload...");
 
     const form = new FormData();
     form.append("file", file);
 
     try {
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.addEventListener("progress", (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = Math.round(
-            (event.loaded / event.total) * 100
-          );
-          setUploadProgress(percentComplete);
+      // First upload the file and get a task ID
+      const uploadResponse = await fetch(
+        "http://localhost:8000/resume/upload",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token || ""}`,
+          },
+          body: form,
         }
-      });
+      );
 
-      xhr.addEventListener("load", async () => {
-        setUploading(false);
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+      }
 
-        if (xhr.status >= 200 && xhr.status < 300) {
-          setProcessing(true);
-          const data = JSON.parse(xhr.responseText);
-          setJsonData(data);
+      const { task_id } = await uploadResponse.json();
+      setUploading(false);
+      setProcessing(true);
 
-          // Simulate processing with a more realistic approach
-          setUploadProgress(80); // Set to 80% after upload
-          await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate processing time
-          setUploadProgress(100); // Finally set to 100%
-          setProcessing(false);
-          setActiveStep(1);
-          setLoading(false);
+      // Simulate upload progress (0-30%)
+      await simulateProgressForStage(0, 30, "Uploading file...");
+
+      // Now poll for status updates
+      let processingComplete = false;
+      let resultData = null;
+
+      // Define the progress ranges for each stage
+      const progressStages = {
+        upload: { start: 30, end: 50, label: "Processing upload..." },
+        extraction: { start: 50, end: 70, label: "Extracting text..." },
+        parsing: { start: 70, end: 90, label: "Parsing resume..." },
+        completion: { start: 90, end: 100, label: "Finalizing..." },
+      };
+
+      while (!processingComplete) {
+        const statusData = await checkProgressStatus(task_id);
+
+        if (!statusData) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          continue;
+        }
+
+        // Update progress based on current stage
+        if (statusData.stage && progressStages[statusData.stage]) {
+          const stage = progressStages[statusData.stage];
+          setProcessingStage(stage.label);
+
+          // Calculate progress within the stage's range
+          const stageProgress = statusData.progress || 0; // 0-100 within stage
+          const actualProgress =
+            stage.start + ((stage.end - stage.start) * stageProgress) / 100;
+          setUploadProgress(Math.round(actualProgress));
+        }
+
+        if (statusData.status === "completed") {
+          processingComplete = true;
+          resultData = statusData.data;
+          // Ensure progress reaches 100%
+          setUploadProgress(100);
+          setProcessingStage("Completed!");
+        } else if (statusData.status === "failed") {
+          throw new Error(statusData.error || "Processing failed");
         } else {
-          // Handle error response
-          setError("Upload failed");
-          setLoading(false);
+          // Wait before polling again
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         }
-      });
+      }
 
-      xhr.addEventListener("error", () => {
-        setError("Network error occurred");
-        setUploading(false);
-        setProcessing(false);
-        setLoading(false);
-      });
-
-      xhr.open("POST", "http://localhost:8000/resume/upload");
-      xhr.setRequestHeader("Authorization", `Bearer ${token || ""}`);
-      xhr.send(form);
+      // Final delay + finish
+      await new Promise((res) => setTimeout(res, 300));
+      setProcessing(false);
+      setJsonData(resultData);
+      setActiveStep(1);
+      setLoading(false);
     } catch (err) {
       setError(err.message || "Upload error");
       setUploading(false);
@@ -175,7 +277,7 @@ export default function Upload() {
             align="center"
             gutterBottom
             sx={{
-              color: "#1e3a8a",
+              color: "black",
               fontWeight: 600,
               mb: 3,
             }}
@@ -195,7 +297,9 @@ export default function Upload() {
             <Stepper activeStep={activeStep} alternativeLabel>
               {steps.map((label) => (
                 <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
+                  <StepLabel StepIconComponent={CustomStepIcon}>
+                    {label}
+                  </StepLabel>
                 </Step>
               ))}
             </Stepper>
@@ -267,7 +371,7 @@ export default function Upload() {
                 </Paper>
               )}
 
-              {uploading && (
+              {(uploading || processing) && (
                 <Box sx={{ width: "100%", mb: 2 }}>
                   <Typography
                     variant="body2"
@@ -275,35 +379,11 @@ export default function Upload() {
                     gutterBottom
                     fontWeight={500}
                   >
-                    Uploading: {uploadProgress}%
+                    {processingStage} ({uploadProgress}%)
                   </Typography>
                   <LinearProgress
                     variant="determinate"
                     value={uploadProgress}
-                    sx={{
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: "#e2e8f0",
-                      "& .MuiLinearProgress-bar": {
-                        backgroundColor: "#1e3a8a",
-                      },
-                    }}
-                  />
-                </Box>
-              )}
-
-              {processing && (
-                <Box sx={{ width: "100%", mb: 2 }}>
-                  <Typography
-                    variant="body2"
-                    align="center"
-                    gutterBottom
-                    fontWeight={500}
-                  >
-                    Processing file...
-                  </Typography>
-                  <LinearProgress
-                    variant="indeterminate"
                     sx={{
                       height: 8,
                       borderRadius: 4,
