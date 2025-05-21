@@ -17,6 +17,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(""); // New state for success message
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -26,7 +27,11 @@ export default function Login() {
     try {
       const res = await axios.post("/auth/login", form);
       setToken(res.data.access_token);
-      navigate("/");
+      setSuccess("Login Successful"); // Set success message
+      // Delay navigation to show success message
+      setTimeout(() => {
+        navigate("/upload");
+      }, 2000); // 2-second delay
     } catch (err) {
       setError("Invalid username or password", err);
     }
@@ -41,6 +46,7 @@ export default function Login() {
               Login
             </Typography>
             {error && <Alert severity="error">{error}</Alert>}
+            {success && <Alert severity="success">{success}</Alert>}
             <TextField
               label="Username"
               name="username"
@@ -64,9 +70,12 @@ export default function Login() {
               onClick={handleSubmit}
               size="large"
               sx={{
-                background: "linear-gradient(to right, #4a148c)",
+                background: "linear-gradient(to right, #4a148c, #7b1fa2)",
                 boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
                 borderRadius: 2,
+                "&:hover": {
+                  background: "linear-gradient(to right, #6a1b9a, #9c27b0)",
+                },
               }}
             >
               Login

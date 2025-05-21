@@ -29,7 +29,10 @@ export default function Register() {
       setError("");
       setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
-      setError("Registration failed. Username might already exist.", err);
+      // Check if the error response has a message
+      const errorMessage =
+        err.response?.data?.message || "Registration failed. Please try again.";
+      setError(errorMessage);
       setSuccess("");
     }
   };

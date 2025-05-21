@@ -1,14 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy.orm import Session
+from sqlalchemy import Column, Integer, String, DateTime, Text, JSON
+from sqlalchemy.sql import func
 from app.services.resume_parser import extract_text_from_pdf, extract_resume_details_with_azure, clean_json_string
-from app.database import get_db
+from app.database import get_db, Base
 import tempfile
 import os
 import traceback
 from docx2pdf import convert
 import uuid
 import time
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
+from datetime import datetime
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -21,6 +25,30 @@ class TaskStatus:
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+# Database model for resume history
+class ResumeHistory(Base):
+    __tablename__ = "resume_history"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String(255), nullable=False)
+    processed_at = Column(DateTime(timezone=True), server_default=func.now())
+    user_id = Column(String(255), nullable=True)  # Can be linked to user authentication
+    resume_data = Column(JSON, nullable=False)
+    file_size = Column(Integer, nullable=True)
+    status = Column(String(50), default="completed")
+    original_file_type = Column(String(10), nullable=True)
+
+
+# Pydantic model for response
+class ResumeHistoryResponse(BaseModel):
+    id: int
+    filename: str
+    processed_at: datetime
+    file_size: Optional[int]
+    status: str
+    original_file_type: Optional[str]
 
 
 @router.post("/upload")
@@ -46,8 +74,11 @@ async def upload_resume(
 
         # Create temporary file with appropriate suffix
         suffix = file_extension
+        file_content = await file.read()
+        file_size = len(file_content)
+        
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            tmp.write(await file.read())
+            tmp.write(file_content)
             tmp_path = tmp.name
         
         # Initialize task status
@@ -58,11 +89,14 @@ async def upload_resume(
             "data": None,
             "error": None,
             "file_path": tmp_path,
-            "file_extension": file_extension
+            "file_extension": file_extension,
+            "filename": file.filename,
+            "file_size": file_size,
+            "user_id": None  # Can be populated from auth
         }
         
         # Start processing in background
-        background_tasks.add_task(process_resume, task_id)
+        background_tasks.add_task(process_resume, task_id, db)
         
         # Return the task ID immediately
         return {"task_id": task_id, "status": "processing"}
@@ -94,7 +128,50 @@ async def get_progress(task_id: str):
     }
 
 
-async def process_resume(task_id: str):
+@router.get("/history", response_model=List[ResumeHistoryResponse])
+async def get_resume_history(db: Session = Depends(get_db), limit: int = 10, skip: int = 0):
+    """Get the resume processing history"""
+    # Optionally filter by user_id if authentication is implemented
+    history = db.query(ResumeHistory).order_by(
+        ResumeHistory.processed_at.desc()
+    ).offset(skip).limit(limit).all()
+    
+    return history
+
+
+@router.get("/history/{resume_id}", response_model=dict)
+async def get_resume_details(resume_id: int, db: Session = Depends(get_db)):
+    """Get a specific resume from history by ID"""
+    resume = db.query(ResumeHistory).filter(ResumeHistory.id == resume_id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    
+    # Return full data including parsed resume content
+    return {
+        "id": resume.id,
+        "filename": resume.filename,
+        "processed_at": resume.processed_at,
+        "file_size": resume.file_size,
+        "status": resume.status,
+        "original_file_type": resume.original_file_type,
+        "resume_data": resume.resume_data
+    }
+
+
+@router.delete("/history/{resume_id}")
+async def delete_resume(resume_id: int, db: Session = Depends(get_db)):
+    """Delete a resume from history"""
+    resume = db.query(ResumeHistory).filter(ResumeHistory.id == resume_id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    
+    db.delete(resume)
+    db.commit()
+    
+    return {"message": "Resume deleted successfully"}
+
+
+async def process_resume(task_id: str, db: Session):
     task = TASKS[task_id]
     tmp_path = task["file_path"]
     file_extension = task["file_extension"]
@@ -156,11 +233,40 @@ async def process_resume(task_id: str):
         task["progress"] = 100
         task["status"] = TaskStatus.COMPLETED
         task["data"] = parsed
+        
+        # Save to history database
+        resume_history = ResumeHistory(
+            filename=task["filename"],
+            resume_data=parsed,
+            file_size=task["file_size"],
+            original_file_type=file_extension.lstrip('.'),
+            user_id=task["user_id"]
+        )
+        
+        db.add(resume_history)
+        db.commit()
+        db.refresh(resume_history)
 
     except Exception as e:
         traceback.print_exc()
         task["status"] = TaskStatus.FAILED
         task["error"] = str(e)
+        
+        # Save failed job to history too
+        try:
+            resume_history = ResumeHistory(
+                filename=task["filename"],
+                resume_data={},  # Empty as processing failed
+                file_size=task["file_size"],
+                original_file_type=file_extension.lstrip('.'),
+                user_id=task["user_id"],
+                status="failed"
+            )
+            
+            db.add(resume_history)
+            db.commit()
+        except:
+            pass
     finally:
         # Clean up temporary files
         try:

@@ -1,9 +1,8 @@
 "use client";
 
 import {
-  Stepper,
-  Step,
-  StepLabel,
+  Tabs,
+  Tab,
   Box,
   Typography,
   Button,
@@ -12,48 +11,37 @@ import {
   CardContent,
   LinearProgress,
   Paper,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { PDFDownloadLink, BlobProvider } from "@react-pdf/renderer";
 import ResumePDF from "./ResumePreview";
+import ResumeHistory from "./ResumeHistory"; // Import the ResumeHistory component
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { generateResumeDocx } from "./DocxGenerator";
-import PreviewIcon from "@mui/icons-material/Preview";
-import GetAppIcon from "@mui/icons-material/GetApp";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
+import DownloadIcon from "@mui/icons-material/Download";
+import HistoryIcon from "@mui/icons-material/History";
 
-const CustomStepIcon = (props) => {
-  const { icon, active, completed } = props;
-
-  const iconMap = {
-    1: <CloudUploadIcon sx={{ fontSize: 28 }} />,
-    2: (
-      <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-        <PreviewIcon sx={{ fontSize: 20 }} />
-        <GetAppIcon sx={{ fontSize: 20 }} />
-      </Box>
-    ),
-  };
-
-  return (
-    <Box
-      sx={{
-        color: active || completed ? "#1e3a8a" : "#94a3b8",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      {iconMap[icon]}
-    </Box>
-  );
+const CustomTabStyle = {
+  fontWeight: 600,
+  minHeight: 48,
+  fontSize: 16,
+  textTransform: "none",
+  "&.Mui-selected": {
+    color: "#1e3a8a",
+  },
 };
-// Reduced to just two steps
-const steps = ["Upload", "Preview & Download"];
+
+// Three tabs for Upload, Download, and History
+const tabs = ["Upload Resume", "Preview & Download", "Resume History"];
 
 export default function Upload() {
   const [file, setFile] = useState(null);
@@ -61,22 +49,36 @@ export default function Upload() {
   const [loading, setLoading] = useState(false);
   const [downloadingDocx, setDownloadingDocx] = useState(false);
   const [error, setError] = useState(null);
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeTab, setActiveTab] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processingStage, setProcessingStage] = useState("");
 
+  // New states for success messages
+  const [successMessage, setSuccessMessage] = useState("");
+  const [openSuccessAlert, setOpenSuccessAlert] = useState(false);
+  const [pdfDownloaded, setPdfDownloaded] = useState(false);
+  const [docxDownloaded, setDocxDownloaded] = useState(false);
+
   const token = localStorage.getItem("token");
 
-  // Reset loading states when component unmounts or when activeStep changes
+  // Reset loading states when component unmounts or when activeTab changes
   useEffect(() => {
     return () => {
       setLoading(false);
       setUploading(false);
       setProcessing(false);
     };
-  }, [activeStep]);
+  }, [activeTab]);
+
+  // Reset downloaded states when going back to upload
+  useEffect(() => {
+    if (activeTab === 0) {
+      setPdfDownloaded(false);
+      setDocxDownloaded(false);
+    }
+  }, [activeTab]);
 
   // Function to simulate progress increase during processing stages
   const simulateProgressForStage = async (
@@ -206,7 +208,13 @@ export default function Upload() {
       await new Promise((res) => setTimeout(res, 300));
       setProcessing(false);
       setJsonData(resultData);
-      setActiveStep(1);
+
+      // Show success message and move to next step
+      setSuccessMessage(
+        "Resume successfully processed! You can now download your formatted resume."
+      );
+      setOpenSuccessAlert(true);
+      setActiveTab(1);
       setLoading(false);
     } catch (err) {
       setError(err.message || "Upload error");
@@ -222,6 +230,9 @@ export default function Upload() {
     setDownloadingDocx(true);
     try {
       await generateResumeDocx(jsonData);
+      setDocxDownloaded(true);
+      setSuccessMessage("DOCX file successfully downloaded!");
+      setOpenSuccessAlert(true);
     } catch (err) {
       setError(err.message || "DOCX download error");
       console.error(err);
@@ -229,6 +240,30 @@ export default function Upload() {
       setDownloadingDocx(false);
     }
   };
+
+  const handlePdfDownloaded = () => {
+    setPdfDownloaded(true);
+    setSuccessMessage("PDF file successfully downloaded!");
+    setOpenSuccessAlert(true);
+  };
+
+  const handleCloseAlert = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setOpenSuccessAlert(false);
+  };
+
+  // Function to update the processed resume data when a history item is selected
+  const handleHistoryItemSelect = useCallback((resumeData) => {
+    setJsonData(resumeData);
+    setActiveTab(1);
+    setSuccessMessage("Resume loaded from history!");
+    setOpenSuccessAlert(true);
+    // Reset download states since this is a newly loaded resume
+    setPdfDownloaded(false);
+    setDocxDownloaded(false);
+  }, []);
 
   const onDrop = useCallback((acceptedFiles) => {
     if (acceptedFiles.length > 0) {
@@ -279,33 +314,48 @@ export default function Upload() {
             sx={{
               color: "black",
               fontWeight: 600,
-              mb: 3,
+              mb: 2,
             }}
           >
             Resume Formatter
           </Typography>
 
-          <Paper
-            elevation={0}
-            sx={{
-              p: 2,
-              mb: 4,
-              backgroundColor: "#f8fafc",
-              borderRadius: 2,
-            }}
-          >
-            <Stepper activeStep={activeStep} alternativeLabel>
-              {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel StepIconComponent={CustomStepIcon}>
-                    {label}
-                  </StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          </Paper>
+          <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
+            <Tabs
+              value={activeTab}
+              onChange={(e, newValue) => setActiveTab(newValue)}
+              variant="fullWidth"
+              sx={{
+                "& .MuiTabs-indicator": {
+                  backgroundColor: "#1e3a8a",
+                  height: 3,
+                },
+              }}
+            >
+              <Tab
+                icon={<FileUploadIcon />}
+                iconPosition="start"
+                label={tabs[0]}
+                disabled={uploading || processing}
+                sx={CustomTabStyle}
+              />
+              <Tab
+                icon={<DownloadIcon />}
+                iconPosition="start"
+                label={tabs[1]}
+                disabled={!jsonData}
+                sx={CustomTabStyle}
+              />
+              <Tab
+                icon={<HistoryIcon />}
+                iconPosition="start"
+                label={tabs[2]}
+                sx={CustomTabStyle}
+              />
+            </Tabs>
+          </Box>
 
-          {activeStep === 0 && (
+          {activeTab === 0 && (
             <Box>
               <Box
                 sx={{
@@ -449,8 +499,42 @@ export default function Upload() {
             </Box>
           )}
 
-          {activeStep === 1 && jsonData && (
+          {activeTab === 1 && jsonData && (
             <Box>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  mb: 3,
+                  borderRadius: 2,
+                  backgroundColor: "#ecfdf5", // Light green background
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  border: "1px solid #d1fae5",
+                }}
+              >
+                <Box display="flex" alignItems="center" gap={1}>
+                  <CheckCircleIcon sx={{ color: "#059669" }} />
+                  <Typography
+                    variant="h6"
+                    sx={{ color: "#047857", fontWeight: 600 }}
+                  >
+                    Resume Successfully Processed!
+                  </Typography>
+                </Box>
+
+                <Typography
+                  variant="body2"
+                  sx={{ color: "#065f46", width: "100%" }}
+                >
+                  Your resume has been formatted. Choose your preferred download
+                  format below.
+                </Typography>
+              </Paper>
+
               <Paper
                 elevation={0}
                 sx={{
@@ -477,6 +561,7 @@ export default function Upload() {
                     document={<ResumePDF data={jsonData} />}
                     fileName={`${jsonData.name || "resume"}.pdf`}
                     style={{ textDecoration: "none" }}
+                    onClick={handlePdfDownloaded}
                   >
                     {({ loading }) => (
                       <Button
@@ -484,16 +569,28 @@ export default function Upload() {
                         color="success"
                         disabled={loading}
                         size="medium"
-                        startIcon={<PictureAsPdfIcon />}
+                        startIcon={
+                          pdfDownloaded ? (
+                            <CheckCircleIcon />
+                          ) : (
+                            <PictureAsPdfIcon />
+                          )
+                        }
                         sx={{
                           borderRadius: 2,
-                          backgroundColor: "#047857",
+                          backgroundColor: pdfDownloaded
+                            ? "#065f46"
+                            : "#047857",
                           "&:hover": {
                             backgroundColor: "#065f46",
                           },
                         }}
                       >
-                        {loading ? "Preparing..." : "Download PDF"}
+                        {loading
+                          ? "Preparing..."
+                          : pdfDownloaded
+                          ? "PDF Downloaded"
+                          : "Download PDF"}
                       </Button>
                     )}
                   </PDFDownloadLink>
@@ -504,16 +601,22 @@ export default function Upload() {
                     onClick={handleDownloadDocx}
                     disabled={downloadingDocx}
                     size="medium"
-                    startIcon={<DescriptionIcon />}
+                    startIcon={
+                      docxDownloaded ? <CheckCircleIcon /> : <DescriptionIcon />
+                    }
                     sx={{
                       borderRadius: 2,
-                      backgroundColor: "#1e3a8a",
+                      backgroundColor: docxDownloaded ? "#1e40af" : "#1e3a8a",
                       "&:hover": {
                         backgroundColor: "#1e40af",
                       },
                     }}
                   >
-                    {downloadingDocx ? "Preparing..." : "Download DOCX"}
+                    {downloadingDocx
+                      ? "Preparing..."
+                      : docxDownloaded
+                      ? "DOCX Downloaded"
+                      : "Download DOCX"}
                   </Button>
                 </Box>
               </Paper>
@@ -555,12 +658,7 @@ export default function Upload() {
               <Box mt={3} display="flex" justifyContent="space-between">
                 <Button
                   variant="outlined"
-                  onClick={() => {
-                    setActiveStep(0);
-                    setUploadProgress(0);
-                    setUploading(false);
-                    setProcessing(false);
-                  }}
+                  onClick={() => setActiveTab(0)}
                   startIcon={<ArrowBackIcon />}
                   sx={{
                     borderRadius: 2,
@@ -590,8 +688,60 @@ export default function Upload() {
               </Box>
             </Box>
           )}
+
+          {/* Resume History Tab */}
+          {activeTab === 2 && (
+            <Box>
+              <Typography
+                variant="h6"
+                sx={{
+                  color: "#1e3a8a",
+                  fontWeight: 600,
+                  mb: 3,
+                }}
+              >
+                Your Resume History
+              </Typography>
+              <Button
+                variant="outlined"
+                onClick={() => setActiveTab(0)}
+                startIcon={<ArrowBackIcon />}
+                sx={{
+                  borderRadius: 2,
+                  borderColor: "#1e3a8a",
+                  color: "#1e3a8a",
+                  "&:hover": {
+                    borderColor: "#1e40af",
+                    backgroundColor: "#f1f5f9",
+                  },
+                }}
+              >
+                Upload resume
+              </Button>
+
+              {/* Integrate ResumeHistory component */}
+              <ResumeHistory onSelectResume={handleHistoryItemSelect} />
+            </Box>
+          )}
         </CardContent>
       </Card>
+
+      {/* Success Notification */}
+      <Snackbar
+        open={openSuccessAlert}
+        autoHideDuration={6000}
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseAlert}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
