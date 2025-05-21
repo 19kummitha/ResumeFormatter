@@ -8,6 +8,7 @@ import {
   Alert,
   Card,
   CardContent,
+  CircularProgress,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axios";
@@ -17,23 +18,28 @@ export default function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(""); // New state for success message
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false); // NEW: loading state
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async () => {
+    setLoading(true);
+    setError("");
+    setSuccess("");
     try {
       const res = await axios.post("/auth/login", form);
       setToken(res.data.access_token);
-      setSuccess("Login Successful"); // Set success message
-      // Delay navigation to show success message
+      setSuccess("Login Successful");
       setTimeout(() => {
         navigate("/upload");
-      }, 2000); // 2-second delay
+      }, 2000);
     } catch (err) {
       setError("Invalid username or password", err);
+    } finally {
+      setLoading(false); // Always stop loading after response
     }
   };
 
@@ -69,6 +75,7 @@ export default function Login() {
               color="primary"
               onClick={handleSubmit}
               size="large"
+              disabled={loading}
               sx={{
                 background: "linear-gradient(to right, #4a148c, #7b1fa2)",
                 boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
@@ -78,7 +85,11 @@ export default function Login() {
                 },
               }}
             >
-              Login
+              {loading ? (
+                <CircularProgress size={24} sx={{ color: "#fff" }} />
+              ) : (
+                "Login"
+              )}
             </Button>
             <Typography align="center" fontSize={14}>
               Don’t have an account?{" "}
