@@ -47,7 +47,7 @@ def extract_resume_details_with_azure(text: str) -> dict:
             {"role": "user", "content": user_prompt}
         ],
         "temperature": 0.2,
-        "max_tokens": 3000
+        "max_tokens": 6000
     }
 
     try:
