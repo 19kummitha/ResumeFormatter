@@ -27,11 +27,11 @@ const styles = StyleSheet.create({
     width: "100%",
     margin: "0 auto",
     backgroundColor: "white",
-    paddingBottom: 30,
+    minHeight: "100%",
   },
   header: {
     flexDirection: "row",
-    height: 100,
+    height: 80,
     backgroundColor: "#000000",
     color: "white",
     padding: 15,
@@ -59,25 +59,40 @@ const styles = StyleSheet.create({
   columnsContainer: {
     flexDirection: "row",
     width: "100%",
+    flex: 1,
   },
   leftPanel: {
     backgroundColor: "#166a6a",
     color: "white",
-    padding: 20,
+    paddingTop: 20,
+    paddingBottom: 30,
+    paddingLeft: 20,
+    paddingRight: 15,
     fontSize: 9,
-    marginLeft: 20, // Margin on the left
-    marginTop: 20, // Margin on the top
-    marginBottom: 20, // Margin on the bottom
+    marginLeft: 20,
+    marginTop: 20,
+    marginBottom: 20,
     width: "40%",
     minHeight: "100%",
   },
   rightPanel: {
-    padding: 20,
+    paddingTop: 20,
+    paddingBottom: 30,
+    paddingLeft: 15,
+    paddingRight: 20,
     fontSize: 9,
     width: "60%",
-    marginRight: 20, // Margin on the right
-    marginTop: 20, // Margin on the top
+    marginRight: 20,
+    marginTop: 20,
     marginBottom: 20,
+    minHeight: "100%",
+  },
+  // Styles for content that might break across pages
+  leftPanelContent: {
+    paddingBottom: 20,
+  },
+  rightPanelContent: {
+    paddingBottom: 20,
   },
   sectionHeading: {
     fontSize: 16,
@@ -92,7 +107,7 @@ const styles = StyleSheet.create({
   },
   listItem: {
     flexDirection: "row",
-    marginBottom: 8,
+    marginBottom: 10,
     paddingLeft: 15,
     position: "relative",
     fontSize: 11,
@@ -104,7 +119,7 @@ const styles = StyleSheet.create({
     top: 3.7,
     width: 3,
     height: 3,
-    backgroundColor: "black", // Black bullets for right panel
+    backgroundColor: "black",
     marginRight: 8,
   },
   leftPanelSquareBullet: {
@@ -113,7 +128,7 @@ const styles = StyleSheet.create({
     top: 3.7,
     width: 3,
     height: 3,
-    backgroundColor: "white", // White bullets for left panel
+    backgroundColor: "white",
     marginRight: 8,
   },
   listItemText: {
@@ -122,14 +137,14 @@ const styles = StyleSheet.create({
   },
   leftPanelListItem: {
     flexDirection: "row",
-    marginBottom: 1,
+    marginBottom: 5,
     paddingLeft: 20,
     position: "relative",
     fontSize: 11,
     lineHeight: 1.4,
   },
   skillContainer: {
-    marginBottom: 6,
+    marginBottom: 10,
   },
   skillLine: {
     flexDirection: "row",
@@ -140,6 +155,17 @@ const styles = StyleSheet.create({
   skillText: {
     fontWeight: "normal",
   },
+  // Section wrapper to handle page breaks better
+  sectionWrapper: {
+    marginBottom: 20,
+    orphans: 2,
+    widows: 2,
+  },
+  // Professional experience wrapper
+  experienceWrapper: {
+    break: false, // Prevent breaking in the middle of an experience item
+    marginBottom: 15,
+  },
 });
 
 const ResumePDF = ({ data }) => {
@@ -149,23 +175,23 @@ const ResumePDF = ({ data }) => {
   return (
     <Document>
       <Page size="A4" style={styles.page} wrap>
-        <View style={styles.page} wrap>
-          <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.logoContainer}>
-                <Image src={ustLogoBase64} style={styles.logo} />
-              </View>
-              <Text style={styles.name}>{data.name}</Text>
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.logoContainer}>
+              <Image src={ustLogoBase64} style={styles.logo} />
             </View>
+            <Text style={styles.name}>{data.name}</Text>
+          </View>
 
-            {/* CONTENT: two-column layout */}
-            <View style={styles.columnsContainer}>
-              {/* Left Column */}
-              <View style={styles.leftPanel}>
+          {/* CONTENT: two-column layout */}
+          <View style={styles.columnsContainer}>
+            {/* Left Column */}
+            <View style={styles.leftPanel}>
+              <View style={styles.leftPanelContent}>
                 {/* Education */}
                 {Array.isArray(data.education) && data.education.length > 0 && (
-                  <View style={{ marginBottom: 15 }}>
+                  <View style={styles.sectionWrapper}>
                     <Text style={styles.sectionHeading}>Education</Text>
                     {data.education.map((edu, i) => (
                       <View key={i} style={styles.leftPanelListItem}>
@@ -178,7 +204,7 @@ const ResumePDF = ({ data }) => {
 
                 {/* Skills */}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
-                  <View style={{ marginBottom: 10 }}>
+                  <View style={styles.sectionWrapper}>
                     <Text style={styles.sectionHeading}>
                       Technical Expertise
                     </Text>
@@ -205,7 +231,7 @@ const ResumePDF = ({ data }) => {
                 {Array.isArray(data.certifications) &&
                   data.certifications.length > 0 &&
                   !data.certifications.includes("Not available") && (
-                    <View style={{ marginBottom: 10 }}>
+                    <View style={styles.sectionWrapper}>
                       <Text style={styles.sectionHeading}>Certifications</Text>
                       {data.certifications.map((certificate, i) => (
                         <View key={i} style={styles.leftPanelListItem}>
@@ -218,7 +244,7 @@ const ResumePDF = ({ data }) => {
 
                 {/* Summary */}
                 {data.summary && data.summary !== "Not available" && (
-                  <View style={{ marginBottom: 15 }}>
+                  <View style={styles.sectionWrapper}>
                     <Text style={styles.sectionHeading}>Summary</Text>
                     <View style={styles.leftPanelListItem}>
                       <View style={styles.leftPanelSquareBullet} />
@@ -227,15 +253,19 @@ const ResumePDF = ({ data }) => {
                   </View>
                 )}
               </View>
+            </View>
 
-              {/* Right Column */}
-              <View style={styles.rightPanel}>
+            {/* Right Column */}
+            <View style={styles.rightPanel}>
+              <View style={styles.rightPanelContent}>
                 <Text style={styles.h2}>Professional Experience</Text>
                 {Array.isArray(data.professional_experience) &&
                   data.professional_experience.map((exp, i) => (
-                    <View key={i} style={styles.listItem}>
-                      <View style={styles.squareBullet} />
-                      <Text style={styles.listItemText}>{exp}</Text>
+                    <View key={i} style={styles.experienceWrapper}>
+                      <View style={styles.listItem}>
+                        <View style={styles.squareBullet} />
+                        <Text style={styles.listItemText}>{exp}</Text>
+                      </View>
                     </View>
                   ))}
               </View>

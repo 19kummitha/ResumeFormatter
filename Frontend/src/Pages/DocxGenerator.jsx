@@ -12,20 +12,21 @@ import {
   VerticalAlign,
   BorderStyle,
   ImageRun,
-  TabStopType, // Added import for tab stops
+  TabStopType,
 } from "docx";
 import { saveAs } from "file-saver";
 
-// Add the trueBulletParagraph function
+// Updated trueBulletParagraph function to accept a custom font size for valueText
 export const trueBulletParagraph = (labelText, valueText, options = {}) => {
-  const bulletColor = options.bulletColor || "000000"; // Default black bullet
+  const bulletColor = options.bulletColor || "000000";
   const labelColor = options.labelColor || bulletColor;
   const valueColor = options.valueColor || bulletColor;
 
   const labelBold = options.labelBold !== undefined ? options.labelBold : false;
   const valueBold = options.valueBold !== undefined ? options.valueBold : false;
   const alignment = options.alignment || AlignmentType.LEFT;
-  const lineSpacing = options.lineSpacing || 240; // Default line spacing (1.0)
+  const lineSpacing = options.lineSpacing || 240;
+  const valueFontSize = options.valueFontSize || 20; // Default to 20 half-points (10 points)
 
   return new Paragraph({
     spacing: { after: 120, line: lineSpacing },
@@ -36,21 +37,21 @@ export const trueBulletParagraph = (labelText, valueText, options = {}) => {
       new TextRun({
         text: "▪\t",
         font: "Arial",
-        size: 20,
-        color: bulletColor, // Bullet color is customizable
+        size: 20, // Bullet font size remains 20 half-points (10 points)
+        color: bulletColor,
       }),
       new TextRun({
         text: labelText,
         bold: labelBold,
         font: "Arial",
-        size: 20,
+        size: 20, // Label font size remains 20 half-points (10 points)
         color: labelColor,
       }),
       new TextRun({
         text: valueText,
         bold: valueBold,
         font: "Arial",
-        size: 20,
+        size: valueFontSize, // Use the custom font size for valueText
         color: valueColor,
       }),
     ],
@@ -78,8 +79,9 @@ const createStyledSections = (data) => {
         trueBulletParagraph("", edu, {
           bulletColor: "FFFFFF",
           valueColor: "FFFFFF",
-          lineSpacing: 276, // 1.15 line spacing
+          lineSpacing: 276,
           indent: { left: 300 },
+          valueFontSize: 18, // Set font size to 9 points (18 half-points)
         })
       );
     });
@@ -98,7 +100,8 @@ const createStyledSections = (data) => {
             labelColor: "FFFFFF",
             valueColor: "FFFFFF",
             labelBold: true,
-            lineSpacing: 276, // 1.15 line spacing
+            lineSpacing: 276,
+            valueFontSize: 18, // Set font size to 9 points (18 half-points)
           }
         )
       );
@@ -112,7 +115,8 @@ const createStyledSections = (data) => {
         trueBulletParagraph("", cert, {
           bulletColor: "FFFFFF",
           valueColor: "FFFFFF",
-          lineSpacing: 276, // 1.15 line spacing
+          lineSpacing: 276,
+          valueFontSize: 18, // Set font size to 9 points (18 half-points)
         })
       );
     });
@@ -131,8 +135,9 @@ const createStyledSections = (data) => {
         trueBulletParagraph("", item, {
           bulletColor: "000000",
           valueColor: "000000",
-          lineSpacing: 480, // 2.0 line spacing
+          lineSpacing: 480,
           alignment: AlignmentType.JUSTIFIED,
+          // No valueFontSize specified, so it defaults to 20 half-points (10 points)
         })
       );
     });
@@ -145,12 +150,14 @@ const createStyledSections = (data) => {
         trueBulletParagraph("", project, {
           bulletColor: "000000",
           valueColor: "000000",
-          lineSpacing: 480, // 2.0 line spacing
+          lineSpacing: 480,
           alignment: AlignmentType.JUSTIFIED,
+          // No valueFontSize specified, so it defaults to 20 half-points (10 points)
         })
       );
     });
   }
+
   // 1. Original Base64 with prefix
   const ustLogoBase64 =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAABCCAYAAAAL1LXDAAAAAXNSR0IArs4c6QAAA7JJREFUaEPtW4111DAMliYANmgngE4ANwFlArgJoBPQm4DeBLQTlE5AmYAyAd2AbiDyBfle4vNfciZx3tnv3evrXWLpk+RPsuKwiJyQezwx85Pnt/ZrEXlORPjsDWZ+DN079jeV+YGIXhLRK0s+ZD4Q0R0z3zv1EpHfROQCfc/MqwjgayJ67wHMY0G57lPHfCYigE0ZAL9hZui4G7wEwCICT373RVMEPYCvTMQVD1g9+3MkWGOLHeglAPYtuZSw7l6DdX1eNGAROW/I6TYhZOFB8JCPgEFg70DCpQO+IqKPHsDb5vvLbibR8Aep4R6TPUBcl2aO0gGDqN4MzQIK/CsR3SyKpRvFvWlPmdeZa0NLoHQPfyKiLwEAMAi8mAy8dMBYh38S6BgVIUD/wN+GjVFtOUfRgKFxU0qGiMuHC6xtvN8rcYsHrKBReKDaGjrg+Stm3iyCpbvoRnraTHHNzGv8swgPG621EEGOdaaqiPvh6YsQ4AdmPgtNEkobTRhl3S1Z3kZ4o8B4PTDUVyHAj8x8GgE8qjAYuhAjOoDJ4XGUoTCAr7zENBsARq2Ki10D2ypnjovsYtA8eJEZ2ElKUyGy1u8AOET7yGcAvdf5EBEUBCgMXCPaPBhijGbPjiYD9OwxrmsOEYG3EXluvSIX4Ka2c6CtEwDH+okRx9quYYcAtNYruhy74l/1uHBFnrZ/ANaXwrYtsQS6HmP1PE0Jv4S1ieXmY2TTv/rVlJ/PFKTd47JFrA3glH1nKvjediz1Jvu6hMgbOnVLwrvUEdmZpE4eZfbUiTTyEMoI6RzjDDV2L1ceWM2A4NBVyNqeFRHkW4AOpZuQQcA70KvNNnvFwQgBmHDb7SrkcIdFXAALb8fybPe2Vi9l9l2W8VZDCvytWtZmPUMY2I6hTg027HMaQMtLEBka8aaPBfnmg0iDXt9ceiWXf0r5NCW4nIYycyUD/h/C55izAp7D6lPKrB6e0tpzyKoensPqU8qsHp7S2nPIqh6ew+pTyqwentLac8g6Pg9r72jMo4uQg9Dq6Z2PmsObLpnoS+fsGxkZWfvSOY1VAWeyZvVwJkMePM1RhnToBBu6lb5TNDd6jsJldTw99B4sOdhNB0wQzMORxx1ZHqkM1V0f08aa8l6DLxFw6LBaNC1WwN0QKzSkq4cdPOCtA2pI15D2HxCZKy3VNVzX8L8jxM53rpZIWt634bqe9h29WBzgoaWofX0FXHpaqh4eaIEa0sce0uh4+N79w2E0HOld1PgLGa5FbiKSBQEAAAAASUVORK5CYII=";
@@ -160,7 +167,7 @@ const createStyledSections = (data) => {
 
   // 3. Convert base64 to Uint8Array
   function base64ToUint8Array(base64) {
-    const binaryString = atob(base64); // works in browser
+    const binaryString = atob(base64);
     const len = binaryString.length;
     const bytes = new Uint8Array(len);
     for (let i = 0; i < len; i++) {
@@ -171,7 +178,7 @@ const createStyledSections = (data) => {
 
   const imageBytes = base64ToUint8Array(base64String);
 
-  // 4. Now define your header table
+  // 4. Define the header table
   const headerTable = new Table({
     rows: [
       new TableRow({
@@ -194,14 +201,14 @@ const createStyledSections = (data) => {
             ],
             verticalAlign: VerticalAlign.CENTER,
             shading: { fill: "000000" },
-            width: { size: 15, type: WidthType.PERCENTAGE }, // Reduced from 30% to 15%
-            margins: { top: 300, bottom: 300, left: 300, right: 0 }, // Removed right margin
+            width: { size: 15, type: WidthType.PERCENTAGE },
+            margins: { top: 300, bottom: 300, left: 300, right: 0 },
           }),
           // Name cell - right side
           new TableCell({
             children: [
               new Paragraph({
-                alignment: AlignmentType.LEFT, // Changed from CENTER to LEFT
+                alignment: AlignmentType.LEFT,
                 children: [
                   new TextRun({
                     text: data.name ? data.name.toUpperCase() : "YOUR NAME",
@@ -215,7 +222,7 @@ const createStyledSections = (data) => {
             ],
             verticalAlign: VerticalAlign.CENTER,
             shading: { fill: "000000" },
-            width: { size: 85, type: WidthType.PERCENTAGE }, // Increased from 70% to 85%
+            width: { size: 85, type: WidthType.PERCENTAGE },
             margins: { top: 300, bottom: 300, left: 1200, right: 300 },
           }),
         ],
@@ -240,7 +247,7 @@ const createStyledSections = (data) => {
         children: [
           // LEFT SPACER COLUMN (acts as margin)
           new TableCell({
-            width: { size: 5, type: WidthType.PERCENTAGE }, // 5% spacer
+            width: { size: 5, type: WidthType.PERCENTAGE },
             children: [new Paragraph("")],
             borders: {
               top: BorderStyle.NONE,
@@ -255,8 +262,8 @@ const createStyledSections = (data) => {
             shading: { fill: "166a6a" },
             children: leftContent,
             margins: {
-              left: 300, // Add left padding (e.g., 300 twips = 0.25 inch)
-              right: 150, // optional right padding to keep text away from border
+              left: 300,
+              right: 150,
             },
             borders: {
               top: BorderStyle.NONE,
@@ -283,7 +290,7 @@ const createStyledSections = (data) => {
             },
           }),
           new TableCell({
-            width: { size: 5, type: WidthType.PERCENTAGE }, // 5% spacer
+            width: { size: 5, type: WidthType.PERCENTAGE },
             children: [new Paragraph("")],
             borders: {
               top: BorderStyle.NONE,
@@ -324,7 +331,6 @@ const createStyledSections = (data) => {
       })
     );
 
-    // Sort experience_data
     const isInvalid = (resps) =>
       !Array.isArray(resps) || resps.length === 0 || resps === "Not available";
 
@@ -339,8 +345,9 @@ const createStyledSections = (data) => {
           labelColor: "000000",
           valueColor: "000000",
           labelBold: true,
-          lineSpacing: 276, // 2.0 line spacing
+          lineSpacing: 276,
           alignment: AlignmentType.JUSTIFIED,
+          // No valueFontSize specified, defaults to 20 half-points (10 points)
         })
       );
 
@@ -351,8 +358,9 @@ const createStyledSections = (data) => {
             labelColor: "000000",
             valueColor: "000000",
             labelBold: true,
-            lineSpacing: 276, // 2.0 line spacing
+            lineSpacing: 276,
             alignment: AlignmentType.JUSTIFIED,
+            // No valueFontSize specified, defaults to 20 half-points (10 points)
           })
         );
       }
@@ -367,8 +375,9 @@ const createStyledSections = (data) => {
               labelColor: "000000",
               valueColor: "000000",
               labelBold: true,
-              lineSpacing: 276, // 2.0 line spacing
+              lineSpacing: 276,
               alignment: AlignmentType.JUSTIFIED,
+              // No valueFontSize specified, defaults to 20 half-points (10 points)
             }
           )
         );
@@ -381,8 +390,9 @@ const createStyledSections = (data) => {
             labelColor: "000000",
             valueColor: "000000",
             labelBold: true,
-            lineSpacing: 276, // 2.0 line spacing
+            lineSpacing: 276,
             alignment: AlignmentType.JUSTIFIED,
+            // No valueFontSize specified, defaults to 20 half-points (10 points)
           })
         );
       }
@@ -394,8 +404,9 @@ const createStyledSections = (data) => {
             labelColor: "000000",
             valueColor: "000000",
             labelBold: true,
-            lineSpacing: 276, // 2.0 line spacing
+            lineSpacing: 276,
             alignment: AlignmentType.JUSTIFIED,
+            // No valueFontSize specified, defaults to 20 half-points (10 points)
           })
         );
       }
@@ -410,8 +421,9 @@ const createStyledSections = (data) => {
             labelColor: "000000",
             valueColor: "000000",
             labelBold: true,
-            lineSpacing: 276, // 2.0 line spacing
+            lineSpacing: 276,
             alignment: AlignmentType.JUSTIFIED,
+            // No valueFontSize specified, defaults to 20 half-points (10 points)
           })
         );
 
@@ -421,15 +433,16 @@ const createStyledSections = (data) => {
               trueBulletParagraph("", res, {
                 bulletColor: "000000",
                 valueColor: "000000",
-                lineSpacing: 276, // 2.0 line spacing
+                lineSpacing: 276,
                 alignment: AlignmentType.JUSTIFIED,
+                // No valueFontSize specified, defaults to 20 half-points (10 points)
               })
             );
           }
         });
       }
 
-      experienceDetail.push(new Paragraph("")); // spacer
+      experienceDetail.push(new Paragraph(""));
     });
   }
 
@@ -455,7 +468,7 @@ const createStyledSections = (data) => {
       properties: {
         type: SectionType.NEXT_PAGE,
         page: {
-          margin: { top: 720, bottom: 720, left: 720, right: 720 }, // 1 inch margins
+          margin: { top: 720, bottom: 720, left: 720, right: 720 },
         },
       },
       children: experienceDetail,
