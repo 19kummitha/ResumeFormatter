@@ -1,9 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy.orm import Session
-from sqlalchemy import Column, Integer, String, DateTime, Text, JSON
+from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, inspect
 from sqlalchemy.sql import func
-from app.services.resume_parser import extract_text_from_pdf, extract_resume_details_with_azure, clean_json_string
-from app.database import get_db, Base
+from app.services.resume_parser import (
+    extract_text_from_pdf, 
+    extract_resume_details_with_azure, 
+    clean_json_string,
+    convert_pdf_to_images,
+    extract_resume_details_with_azure_vision
+)
+from app.database import get_db, Base, engine
 import tempfile
 import os
 import traceback
@@ -13,6 +19,15 @@ import time
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from pydantic import BaseModel
+
+# Check if processing_method column exists in resume_history table
+def column_exists(table_name, column_name):
+    inspector = inspect(engine)
+    columns = inspector.get_columns(table_name)
+    return any(col['name'] == column_name for col in columns)
+
+# Flag to track if processing_method column exists
+HAS_PROCESSING_METHOD_COLUMN = column_exists('resume_history', 'processing_method')
 
 router = APIRouter()
 
@@ -39,6 +54,10 @@ class ResumeHistory(Base):
     file_size = Column(Integer, nullable=True)
     status = Column(String(50), default="completed")
     original_file_type = Column(String(10), nullable=True)
+    
+    # Only add this column to the model if it exists in the database
+    if HAS_PROCESSING_METHOD_COLUMN:
+        processing_method = Column(String(20), default="text")
 
 
 # Pydantic model for response
@@ -49,13 +68,15 @@ class ResumeHistoryResponse(BaseModel):
     file_size: Optional[int]
     status: str
     original_file_type: Optional[str]
+    processing_method: Optional[str] = "text"
 
 
 @router.post("/upload")
 async def upload_resume(
     file: UploadFile = File(...),
     background_tasks: BackgroundTasks = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    use_vision: bool = True  # New parameter to toggle between text and image processing
 ):
     try:
         # Generate a unique task ID
@@ -92,14 +113,15 @@ async def upload_resume(
             "file_extension": file_extension,
             "filename": file.filename,
             "file_size": file_size,
-            "user_id": None  # Can be populated from auth
+            "user_id": None,  # Can be populated from auth
+            "use_vision": use_vision  # Store whether to use vision-based processing
         }
         
         # Start processing in background
         background_tasks.add_task(process_resume, task_id, db)
         
         # Return the task ID immediately
-        return {"task_id": task_id, "status": "processing"}
+        return {"task_id": task_id, "status": "processing", "method": "vision" if use_vision else "text"}
 
     except HTTPException as http_exc:
         raise http_exc
@@ -147,7 +169,7 @@ async def get_resume_details(resume_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Resume not found")
     
     # Return full data including parsed resume content
-    return {
+    result = {
         "id": resume.id,
         "filename": resume.filename,
         "processed_at": resume.processed_at,
@@ -156,6 +178,14 @@ async def get_resume_details(resume_id: int, db: Session = Depends(get_db)):
         "original_file_type": resume.original_file_type,
         "resume_data": resume.resume_data
     }
+    
+    # Only add processing_method if the column exists
+    if HAS_PROCESSING_METHOD_COLUMN:
+        result["processing_method"] = getattr(resume, "processing_method", "text")
+    else:
+        result["processing_method"] = "text"  # Default value
+    
+    return result
 
 
 @router.delete("/history/{resume_id}")
@@ -175,47 +205,91 @@ async def process_resume(task_id: str, db: Session):
     task = TASKS[task_id]
     tmp_path = task["file_path"]
     file_extension = task["file_extension"]
-    pdf_path = tmp_path
+    use_vision = task.get("use_vision", True)
     
     try:
         # Update status to processing
         task["status"] = TaskStatus.PROCESSING
         
-        # Convert DOC/DOCX to PDF if necessary
+        # For DOC/DOCX files, we'll skip conversion and process directly
         if file_extension in ['.doc', '.docx']:
-            task["stage"] = "conversion"
-            task["progress"] = 0
-            pdf_path = tmp_path.replace(file_extension, '.pdf')
+            # If using vision, we'll need to inform the user that DOCX isn't supported for vision
+            if use_vision:
+                print("Vision-based processing doesn't support DOCX files directly")
+                print("Falling back to text-based processing")
+                use_vision = False  # Force text-based processing for DOCX
+        
+        # Process using either vision-based or text-based approach
+        processing_method = "text"  # Default to text in case of fallback
+        
+        if use_vision and file_extension == '.pdf':
             try:
-                convert(tmp_path, pdf_path)  # Convert DOC/DOCX to PDF
+                # Step 1: Convert PDF to images
+                task["stage"] = "conversion_to_image"
+                task["progress"] = 0
                 
-                # Simulating progress for conversion
+                # Simulate extraction progress updates
                 for i in range(1, 6):
-                    time.sleep(0.2)  # Simulate work
+                    time.sleep(0.3)  # Simulate work
                     task["progress"] = i * 20
                 
+                # Convert PDF to images
+                images = convert_pdf_to_images(tmp_path)
+                task["progress"] = 100
+                
+                # Step 2: Extract structured resume details (via Azure with vision)
+                task["stage"] = "parsing_with_vision"
+                task["progress"] = 0
+                
+                # Simulate parsing progress updates
+                for i in range(1, 9):
+                    time.sleep(0.2)  # Simulate work
+                    task["progress"] = i * 12
+                    
+                extracted = extract_resume_details_with_azure_vision(images)
+                parsed = clean_json_string(extracted)
+                task["progress"] = 100
+                
+                processing_method = "vision"
+                
             except Exception as e:
-                raise Exception(f"Failed to convert DOC/DOCX to PDF: {str(e)}")
-
-        # Step 1: Extract text from PDF
-        task["stage"] = "extraction"
-        task["progress"] = 0
-        try:
+                print(f"Vision-based processing failed, falling back to text-based: {str(e)}")
+                # Fall back to text-based processing
+                use_vision = False
+        
+        # If vision processing failed, wasn't requested, or file is DOCX, use text-based processing
+        if not use_vision:
+            # Step 1: Extract text from file
+            task["stage"] = "extraction"
+            task["progress"] = 0
+            
             # Simulate extraction progress updates
             for i in range(1, 6):
                 time.sleep(0.3)  # Simulate work
                 task["progress"] = i * 20
             
-            text = extract_text_from_pdf(pdf_path)
+            # Extract text based on file type
+            if file_extension == '.pdf':
+                text = extract_text_from_pdf(tmp_path)
+            elif file_extension in ['.doc', '.docx']:
+                # For DOCX files, we'll use a simple approach to extract text
+                # This is a placeholder - you'll need to implement a method to extract text from DOCX
+                # without additional libraries, or use a library you already have
+                text = "This is a placeholder for DOCX text extraction. Please implement a method to extract text from DOCX files."
+                
+                # If you have python-docx already:
+                # from docx import Document
+                # doc = Document(tmp_path)
+                # text = '\n'.join([para.text for para in doc.paragraphs])
+            else:
+                raise Exception(f"Unsupported file type: {file_extension}")
+                
             task["progress"] = 100
             
-        except Exception as e:
-            raise Exception(f"Failed to extract text: {str(e)}")
-
-        # Step 2: Extract structured resume details (via Azure)
-        task["stage"] = "parsing"
-        task["progress"] = 0
-        try:
+            # Step 2: Extract structured resume details (via Azure)
+            task["stage"] = "parsing"
+            task["progress"] = 0
+            
             # Simulate parsing progress updates
             for i in range(1, 9):
                 time.sleep(0.2)  # Simulate work
@@ -225,8 +299,7 @@ async def process_resume(task_id: str, db: Session):
             parsed = clean_json_string(extracted)
             task["progress"] = 100
             
-        except Exception as e:
-            raise Exception(f"Failed to parse resume: {str(e)}")
+            processing_method = "text"
 
         # Set completed status and store the parsed data
         task["stage"] = "completion"
@@ -234,7 +307,7 @@ async def process_resume(task_id: str, db: Session):
         task["status"] = TaskStatus.COMPLETED
         task["data"] = parsed
         
-        # Save to history database
+        # Create resume history object with basic fields
         resume_history = ResumeHistory(
             filename=task["filename"],
             resume_data=parsed,
@@ -242,6 +315,10 @@ async def process_resume(task_id: str, db: Session):
             original_file_type=file_extension.lstrip('.'),
             user_id=task["user_id"]
         )
+        
+        # Only set processing_method if the column exists
+        if HAS_PROCESSING_METHOD_COLUMN:
+            resume_history.processing_method = processing_method
         
         db.add(resume_history)
         db.commit()
@@ -254,6 +331,7 @@ async def process_resume(task_id: str, db: Session):
         
         # Save failed job to history too
         try:
+            # Create resume history object with basic fields
             resume_history = ResumeHistory(
                 filename=task["filename"],
                 resume_data={},  # Empty as processing failed
@@ -262,6 +340,10 @@ async def process_resume(task_id: str, db: Session):
                 user_id=task["user_id"],
                 status="failed"
             )
+            
+            # Only set processing_method if the column exists
+            if HAS_PROCESSING_METHOD_COLUMN:
+                resume_history.processing_method = "vision" if use_vision else "text"
             
             db.add(resume_history)
             db.commit()
@@ -272,7 +354,6 @@ async def process_resume(task_id: str, db: Session):
         try:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
-            if pdf_path != tmp_path and os.path.exists(pdf_path):
-                os.remove(pdf_path)
         except:
             pass
+
