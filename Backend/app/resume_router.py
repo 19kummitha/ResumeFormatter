@@ -4,10 +4,12 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, inspect
 from sqlalchemy.sql import func
 from app.services.resume_parser import (
     extract_text_from_pdf, 
+    extract_text_from_docx,  # Import the new DOCX function
     extract_resume_details_with_azure, 
     clean_json_string,
     convert_pdf_to_images,
-    extract_resume_details_with_azure_vision
+    extract_resume_details_with_azure_vision,
+    convert_docx_to_pdf  # Import the new DOCX to PDF conversion function
 )
 from app.database import get_db, Base, engine
 import tempfile
@@ -206,54 +208,84 @@ async def process_resume(task_id: str, db: Session):
     tmp_path = task["file_path"]
     file_extension = task["file_extension"]
     use_vision = task.get("use_vision", True)
+    converted_pdf_path = None  # Track converted PDF for cleanup
     
     try:
         # Update status to processing
         task["status"] = TaskStatus.PROCESSING
         
-        # For DOC/DOCX files, we'll skip conversion and process directly
-        if file_extension in ['.doc', '.docx']:
-            # If using vision, we'll need to inform the user that DOCX isn't supported for vision
-            if use_vision:
-                print("Vision-based processing doesn't support DOCX files directly")
-                print("Falling back to text-based processing")
-                use_vision = False  # Force text-based processing for DOCX
+        # For DOC/DOCX files, convert to PDF first if using vision processing
+        if file_extension in ['.doc', '.docx'] and use_vision:
+            try:
+                # Step 1: Convert DOCX to PDF for vision processing
+                task["stage"] = "converting_docx_to_pdf"
+                task["progress"] = 0
+                
+                print(f"Converting {file_extension} to PDF for comprehensive vision processing...")
+                
+                # Simulate conversion progress
+                for i in range(1, 6):
+                    time.sleep(0.2)
+                    task["progress"] = i * 20
+                
+                # Convert DOCX to PDF
+                converted_pdf_path = convert_docx_to_pdf(tmp_path)
+                task["progress"] = 100
+                
+                # Update file extension and path for further processing
+                file_extension = '.pdf'
+                tmp_path = converted_pdf_path
+                
+                print(f"Successfully converted to PDF for comprehensive table extraction: {converted_pdf_path}")
+                
+            except Exception as e:
+                print(f"DOCX to PDF conversion failed, falling back to text-based processing: {str(e)}")
+                use_vision = False
         
         # Process using either vision-based or text-based approach
         processing_method = "text"  # Default to text in case of fallback
         
         if use_vision and file_extension == '.pdf':
             try:
-                # Step 1: Convert PDF to images
-                task["stage"] = "conversion_to_image"
+                # Step 1: Convert PDF to images (ALL pages for complete table extraction)
+                task["stage"] = "conversion_to_image_all_pages"
                 task["progress"] = 0
+                
+                print("Converting ALL pages to images for comprehensive table extraction...")
                 
                 # Simulate extraction progress updates
                 for i in range(1, 6):
-                    time.sleep(0.3)  # Simulate work
+                    time.sleep(0.4)  # Slightly longer for all pages
                     task["progress"] = i * 20
                 
-                # Convert PDF to images
+                # Convert PDF to images (all pages)
                 images = convert_pdf_to_images(tmp_path)
+                print(f"Converted all {len(images)} pages to images for complete table analysis")
                 task["progress"] = 100
                 
-                # Step 2: Extract structured resume details (via Azure with vision)
-                task["stage"] = "parsing_with_vision"
+                # Step 2: Extract structured resume details (via Azure with vision - ALL pages)
+                task["stage"] = "parsing_all_pages_with_vision"
                 task["progress"] = 0
                 
-                # Simulate parsing progress updates
-                for i in range(1, 9):
-                    time.sleep(0.2)  # Simulate work
-                    task["progress"] = i * 12
+                print("Starting comprehensive vision-based parsing of all pages and table rows...")
+                
+                # Simulate parsing progress updates for longer processing
+                for i in range(1, 11):
+                    time.sleep(0.3)  # Longer processing time for all pages
+                    task["progress"] = i * 10
                     
                 extracted = extract_resume_details_with_azure_vision(images)
                 parsed = clean_json_string(extracted)
-                task["progress"] = 100
                 
+                # Log the number of experience entries found
+                experience_data = parsed.get('experience_data', [])
+                print(f"Successfully extracted {len(experience_data)} experience entries from all table rows")
+                
+                task["progress"] = 100
                 processing_method = "vision"
                 
             except Exception as e:
-                print(f"Vision-based processing failed, falling back to text-based: {str(e)}")
+                print(f"Comprehensive vision-based processing failed, falling back to text-based: {str(e)}")
                 # Fall back to text-based processing
                 use_vision = False
         
@@ -268,21 +300,19 @@ async def process_resume(task_id: str, db: Session):
                 time.sleep(0.3)  # Simulate work
                 task["progress"] = i * 20
             
-            # Extract text based on file type
-            if file_extension == '.pdf':
-                text = extract_text_from_pdf(tmp_path)
-            elif file_extension in ['.doc', '.docx']:
-                # For DOCX files, we'll use a simple approach to extract text
-                # This is a placeholder - you'll need to implement a method to extract text from DOCX
-                # without additional libraries, or use a library you already have
-                text = "This is a placeholder for DOCX text extraction. Please implement a method to extract text from DOCX files."
-                
-                # If you have python-docx already:
-                # from docx import Document
-                # doc = Document(tmp_path)
-                # text = '\n'.join([para.text for para in doc.paragraphs])
+            # Extract text based on file type (use original file for text extraction)
+            original_file_extension = task["file_extension"]
+            original_file_path = task["file_path"]
+            
+            if original_file_extension == '.pdf':
+                text = extract_text_from_pdf(original_file_path)
+                print(f"Extracted {len(text)} characters from PDF")
+            elif original_file_extension in ['.doc', '.docx']:
+                # Use the new DOCX extraction function
+                text = extract_text_from_docx(original_file_path)
+                print(f"Extracted {len(text)} characters from DOCX")
             else:
-                raise Exception(f"Unsupported file type: {file_extension}")
+                raise Exception(f"Unsupported file type: {original_file_extension}")
                 
             task["progress"] = 100
             
@@ -307,12 +337,16 @@ async def process_resume(task_id: str, db: Session):
         task["status"] = TaskStatus.COMPLETED
         task["data"] = parsed
         
+        # Log final results
+        experience_data = parsed.get('experience_data', [])
+        print(f"Final result: Successfully processed resume with {len(experience_data)} experience entries using {processing_method} method")
+        
         # Create resume history object with basic fields
         resume_history = ResumeHistory(
             filename=task["filename"],
             resume_data=parsed,
             file_size=task["file_size"],
-            original_file_type=file_extension.lstrip('.'),
+            original_file_type=task["file_extension"].lstrip('.'),  # Use original file extension
             user_id=task["user_id"]
         )
         
@@ -336,7 +370,7 @@ async def process_resume(task_id: str, db: Session):
                 filename=task["filename"],
                 resume_data={},  # Empty as processing failed
                 file_size=task["file_size"],
-                original_file_type=file_extension.lstrip('.'),
+                original_file_type=task["file_extension"].lstrip('.'),
                 user_id=task["user_id"],
                 status="failed"
             )
@@ -352,8 +386,10 @@ async def process_resume(task_id: str, db: Session):
     finally:
         # Clean up temporary files
         try:
-            if os.path.exists(tmp_path):
-                os.remove(tmp_path)
+            if os.path.exists(task["file_path"]):
+                os.remove(task["file_path"])
+            # Also clean up converted PDF if it was created
+            if converted_pdf_path and os.path.exists(converted_pdf_path) and converted_pdf_path != task["file_path"]:
+                os.remove(converted_pdf_path)
         except:
             pass
-
