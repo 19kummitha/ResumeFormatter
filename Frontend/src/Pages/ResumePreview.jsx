@@ -190,15 +190,13 @@ const ResumePDF = ({ data }) => {
             <View style={styles.leftPanel}>
               <View style={styles.leftPanelContent}>
                 {/* Education */}
-                {Array.isArray(data.education) && data.education.length > 0 && (
+                {data.education && (
                   <View style={styles.sectionWrapper}>
                     <Text style={styles.sectionHeading}>Education</Text>
-                    {data.education.map((edu, i) => (
-                      <View key={i} style={styles.leftPanelListItem}>
-                        <View style={styles.leftPanelSquareBullet} />
-                        <Text style={styles.listItemText}>{edu}</Text>
-                      </View>
-                    ))}
+                    <View style={styles.leftPanelListItem}>
+                      <View style={styles.leftPanelSquareBullet} />
+                      <Text style={styles.listItemText}>{data.education}</Text>
+                    </View>
                   </View>
                 )}
 

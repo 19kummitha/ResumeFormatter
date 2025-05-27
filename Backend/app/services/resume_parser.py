@@ -20,6 +20,7 @@ def extract_text_from_pdf(file_path: str) -> str:
         text = ""
         for page in reader.pages:
             text += page.extract_text() or ""
+
         return text
 
 def extract_text_from_docx(file_path: str) -> str:
@@ -195,9 +196,9 @@ def extract_resume_details_with_azure(text: str) -> dict:
         "- email\n"
         "- mobile\n"
         "- skills (group related skills together, and return as a list of objects with category as the key and related skills as the value. For example: [{ 'Programming Languages': ['Java', 'C++'] }, { 'Cloud': ['AWS', 'Docker'] }])\n"
-        "- education (as a list of degrees/institutions)\n"
+        "- education (recently passed degree/institution)\n"
         "- professional_experience (Try to get the entire resume summary. Note that it should be in format 'professional_experience':['point1','point2',..])\n"
-        "- certifications (as a list)\n"
+        "- certifications (as a list\check for certifications with images eg: microsoft certified Technology specialist)\n"
         "- experience_data (as a list of objects with each object containing the following keys: 'company', 'startDate', 'endDate', 'role', 'clientEngagement', 'program', and 'responsibilities' which is a list of bullet points describing duties)\n"
         "Return the data as valid JSON. If there is no data available for a section, try to infer it from the resume. If there is no data available for a section, try to infer it from the resume. If not possible, return 'Not available' for that section."
     )
@@ -240,9 +241,9 @@ def extract_resume_details_with_azure_vision(images: list) -> dict:
         "- email\n"
         "- mobile\n"
         "- skills (group related skills together, and return as a list of objects with category as the key and related skills as the value. For example: [{ 'Programming Languages': ['Java', 'C++'] }, { 'Cloud': ['AWS', 'Docker'] }])\n"
-        "- education (as a list of degrees/institutions)\n"
+        "- education (recently passed degree/institution)\n"
         "- professional_experience (Try to get the entire resume summary. Note that it should be in format 'professional_experience':['point1','point2',..])\n"
-        "- certifications (as a list)\n"
+        "- certifications (as a list\check for certifications with images eg: microsoft certified Technology specialist)\n"
         "- experience_data (as a list of objects with each object containing the following keys: 'company', 'startDate', 'endDate', 'role', 'clientEngagement', 'program', and 'responsibilities' which is a list of bullet points describing duties)\n\n"
         "CRITICAL INSTRUCTIONS FOR EXPERIENCE DATA EXTRACTION:\n"
         "- EXTRACT EVERY SINGLE ROW from ALL experience tables across ALL pages\n"
