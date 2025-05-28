@@ -1,21 +1,15 @@
+import gc
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, inspect
 from sqlalchemy.sql import func
-from app.services.resume_parser import (
-    extract_text_from_pdf, 
-    extract_text_from_docx,  # Import the new DOCX function
-    extract_resume_details_with_azure, 
-    clean_json_string,
-    convert_pdf_to_images,
-    extract_resume_details_with_azure_vision,
-    convert_docx_to_pdf  # Import the new DOCX to PDF conversion function
-)
+from app.services.azure_clients import extract_resume_details_with_azure, extract_resume_details_with_azure_vision
+from app.services.image_processors import convert_pdf_to_images
+from app.services.resume_parser import clean_json_string, convert_docx_to_pdf, extract_text_from_docx, extract_text_from_pdf
 from app.database import get_db, Base, engine
 import tempfile
 import os
 import traceback
-from docx2pdf import convert
 import uuid
 import time
 from typing import Dict, Any, List, Optional
@@ -130,8 +124,7 @@ async def upload_resume(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Unexpected error occurred: {str(e)}")
-
-
+        
 @router.get("/progress/{task_id}")
 async def get_progress(task_id: str):
     if task_id not in TASKS:
@@ -208,99 +201,106 @@ async def process_resume(task_id: str, db: Session):
     tmp_path = task["file_path"]
     file_extension = task["file_extension"]
     use_vision = task.get("use_vision", True)
-    converted_pdf_path = None  # Track converted PDF for cleanup
+    converted_pdf_path = None
     
     try:
-        # Update status to processing
         task["status"] = TaskStatus.PROCESSING
         
-        # For DOC/DOCX files, convert to PDF first if using vision processing
+        # For DOC/DOCX files, try conversion to PDF for vision processing with enhanced error handling
         if file_extension in ['.doc', '.docx'] and use_vision:
             try:
-                # Step 1: Convert DOCX to PDF for vision processing
-                task["stage"] = "converting_docx_to_pdf"
-                task["progress"] = 0
+                task["stage"] = "converting_docx_to_pdf_with_aspose"
+                task["progress"] = 20
                 
-                print(f"Converting {file_extension} to PDF for comprehensive vision processing...")
+                print(f"Attempting to convert {file_extension} to PDF using Aspose.Words for enhanced vision processing...")
                 
-                # Simulate conversion progress
-                for i in range(1, 6):
-                    time.sleep(0.2)
-                    task["progress"] = i * 20
+                # Force garbage collection before conversion to free memory
+                gc.collect()
                 
-                # Convert DOCX to PDF
                 converted_pdf_path = convert_docx_to_pdf(tmp_path)
-                task["progress"] = 100
                 
-                # Update file extension and path for further processing
-                file_extension = '.pdf'
-                tmp_path = converted_pdf_path
-                
-                print(f"Successfully converted to PDF for comprehensive table extraction: {converted_pdf_path}")
+                if os.path.exists(converted_pdf_path):
+                    file_extension = '.pdf'
+                    tmp_path = converted_pdf_path
+                    task["progress"] = 100
+                    print(f"Successfully converted to PDF using Aspose.Words for certification detection: {converted_pdf_path}")
+                else:
+                    raise Exception("PDF file was not created")
                 
             except Exception as e:
-                print(f"DOCX to PDF conversion failed, falling back to text-based processing: {str(e)}")
+                print(f"DOCX to PDF conversion with Aspose.Words failed: {str(e)}")
+                print("Falling back to enhanced text-based processing for certification extraction...")
                 use_vision = False
+                task["progress"] = 0
+                
+                # Force cleanup of any partial conversion attempts
+                if converted_pdf_path and os.path.exists(converted_pdf_path):
+                    try:
+                        os.remove(converted_pdf_path)
+                        converted_pdf_path = None
+                    except:
+                        pass
+                
+                # Force garbage collection after failed conversion
+                gc.collect()
         
-        # Process using either vision-based or text-based approach
-        processing_method = "text"  # Default to text in case of fallback
+        # Process using enhanced vision-based approach for PDFs
+        processing_method = "text"
         
         if use_vision and file_extension == '.pdf':
             try:
-                # Step 1: Convert PDF to images (ALL pages for complete table extraction)
-                task["stage"] = "conversion_to_image_all_pages"
+                task["stage"] = "high_quality_image_conversion"
                 task["progress"] = 0
                 
-                print("Converting ALL pages to images for comprehensive table extraction...")
+                print("Converting ALL pages to high-quality images for certification logo detection...")
                 
-                # Simulate extraction progress updates
                 for i in range(1, 6):
-                    time.sleep(0.4)  # Slightly longer for all pages
+                    time.sleep(0.4)
                     task["progress"] = i * 20
                 
-                # Convert PDF to images (all pages)
-                images = convert_pdf_to_images(tmp_path)
-                print(f"Converted all {len(images)} pages to images for complete table analysis")
+                images = convert_pdf_to_images(tmp_path, dpi=400)  # Higher DPI for better text recognition
+                print(f"Converted all {len(images)} pages to high-quality images for certification detection")
                 task["progress"] = 100
                 
-                # Step 2: Extract structured resume details (via Azure with vision - ALL pages)
-                task["stage"] = "parsing_all_pages_with_vision"
+                task["stage"] = "comprehensive_vision_analysis"
                 task["progress"] = 0
                 
-                print("Starting comprehensive vision-based parsing of all pages and table rows...")
+                print("Starting comprehensive vision analysis with certification logo detection...")
                 
-                # Simulate parsing progress updates for longer processing
                 for i in range(1, 11):
-                    time.sleep(0.3)  # Longer processing time for all pages
+                    time.sleep(0.3)
                     task["progress"] = i * 10
                     
                 extracted = extract_resume_details_with_azure_vision(images)
                 parsed = clean_json_string(extracted)
                 
-                # Log the number of experience entries found
                 experience_data = parsed.get('experience_data', [])
-                print(f"Successfully extracted {len(experience_data)} experience entries from all table rows")
+                certifications = parsed.get('certifications', [])
+                print(f"Vision processing complete: {len(experience_data)} experience entries, {len(certifications)} certifications extracted")
+                
+                # Log certification details for verification
+                for cert in certifications:
+                    print(f"Certification detected: {cert}")
                 
                 task["progress"] = 100
-                processing_method = "vision"
+                processing_method = "enhanced_vision"
                 
             except Exception as e:
-                print(f"Comprehensive vision-based processing failed, falling back to text-based: {str(e)}")
-                # Fall back to text-based processing
+                print(f"Enhanced vision processing failed: {str(e)}")
+                print("Falling back to enhanced text-based processing...")
                 use_vision = False
         
-        # If vision processing failed, wasn't requested, or file is DOCX, use text-based processing
+        # Enhanced text-based processing with improved table and certification extraction
         if not use_vision:
-            # Step 1: Extract text from file
-            task["stage"] = "extraction"
+            task["stage"] = "enhanced_text_extraction_with_tables"
             task["progress"] = 0
             
-            # Simulate extraction progress updates
+            print("Starting enhanced text-based extraction with comprehensive table parsing...")
+            
             for i in range(1, 6):
-                time.sleep(0.3)  # Simulate work
+                time.sleep(0.3)
                 task["progress"] = i * 20
             
-            # Extract text based on file type (use original file for text extraction)
             original_file_extension = task["file_extension"]
             original_file_path = task["file_path"]
             
@@ -308,49 +308,58 @@ async def process_resume(task_id: str, db: Session):
                 text = extract_text_from_pdf(original_file_path)
                 print(f"Extracted {len(text)} characters from PDF")
             elif original_file_extension in ['.doc', '.docx']:
-                # Use the new DOCX extraction function
                 text = extract_text_from_docx(original_file_path)
-                print(f"Extracted {len(text)} characters from DOCX")
+                print(f"Enhanced DOCX extraction: {len(text)} characters with comprehensive table parsing")
             else:
                 raise Exception(f"Unsupported file type: {original_file_extension}")
                 
             task["progress"] = 100
             
-            # Step 2: Extract structured resume details (via Azure)
-            task["stage"] = "parsing"
+            task["stage"] = "comprehensive_parsing_analysis"
             task["progress"] = 0
             
-            # Simulate parsing progress updates
+            print("Starting comprehensive parsing with enhanced table and certification extraction...")
+            
             for i in range(1, 9):
-                time.sleep(0.2)  # Simulate work
+                time.sleep(0.2)
                 task["progress"] = i * 12
                 
             extracted = extract_resume_details_with_azure(text)
             parsed = clean_json_string(extracted)
             task["progress"] = 100
             
-            processing_method = "text"
+            processing_method = "enhanced_text_comprehensive"
+            
+            # Enhanced logging for verification
+            experience_data = parsed.get('experience_data', [])
+            certifications = parsed.get('certifications', [])
+            print(f"Enhanced text processing complete: {len(experience_data)} experience entries, {len(certifications)} certifications")
+            
+            # Debug: Print experience entries to verify all rows were captured
+            for i, exp in enumerate(experience_data):
+                print(f"Experience {i+1}: Company={exp.get('company', 'N/A')}, Role={exp.get('role', 'N/A')}")
+            
+            # Debug: Print all certifications found
+            for i, cert in enumerate(certifications):
+                print(f"Certification {i+1}: {cert}")
 
-        # Set completed status and store the parsed data
         task["stage"] = "completion"
         task["progress"] = 100
         task["status"] = TaskStatus.COMPLETED
         task["data"] = parsed
         
-        # Log final results
-        experience_data = parsed.get('experience_data', [])
-        print(f"Final result: Successfully processed resume with {len(experience_data)} experience entries using {processing_method} method")
+        print(f"Processing completed successfully using {processing_method} method")
+        print(f"Final result: Successfully processed resume with {len(parsed.get('experience_data', []))} experience entries and {len(parsed.get('certifications', []))} certifications using {processing_method} method")
         
-        # Create resume history object with basic fields
+        # Save to database
         resume_history = ResumeHistory(
             filename=task["filename"],
             resume_data=parsed,
             file_size=task["file_size"],
-            original_file_type=task["file_extension"].lstrip('.'),  # Use original file extension
+            original_file_type=task["file_extension"].lstrip('.'),
             user_id=task["user_id"]
         )
         
-        # Only set processing_method if the column exists
         if HAS_PROCESSING_METHOD_COLUMN:
             resume_history.processing_method = processing_method
         
@@ -363,33 +372,36 @@ async def process_resume(task_id: str, db: Session):
         task["status"] = TaskStatus.FAILED
         task["error"] = str(e)
         
-        # Save failed job to history too
         try:
-            # Create resume history object with basic fields
             resume_history = ResumeHistory(
                 filename=task["filename"],
-                resume_data={},  # Empty as processing failed
+                resume_data={},
                 file_size=task["file_size"],
                 original_file_type=task["file_extension"].lstrip('.'),
                 user_id=task["user_id"],
                 status="failed"
             )
             
-            # Only set processing_method if the column exists
             if HAS_PROCESSING_METHOD_COLUMN:
-                resume_history.processing_method = "vision" if use_vision else "text"
+                resume_history.processing_method = "enhanced_text_comprehensive" if not use_vision else "enhanced_vision"
             
             db.add(resume_history)
             db.commit()
         except:
             pass
     finally:
-        # Clean up temporary files
+        # Enhanced cleanup with better error handling
         try:
             if os.path.exists(task["file_path"]):
                 os.remove(task["file_path"])
-            # Also clean up converted PDF if it was created
+        except Exception as e:
+            print(f"Error cleaning up original file: {e}")
+            
+        try:
             if converted_pdf_path and os.path.exists(converted_pdf_path) and converted_pdf_path != task["file_path"]:
                 os.remove(converted_pdf_path)
-        except:
-            pass
+        except Exception as e:
+            print(f"Error cleaning up converted PDF: {e}")
+        
+        # Force garbage collection to clean up any COM objects
+        gc.collect()

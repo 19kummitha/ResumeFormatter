@@ -22,6 +22,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica",
     backgroundColor: "#f2f2f2",
     padding: 0,
+    minHeight: "90%",
   },
   container: {
     width: "100%",
@@ -31,13 +32,13 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    height: 80,
+    height: 100,
     backgroundColor: "#000000",
     color: "white",
     padding: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
+    alignItems: "center", // Vertical center
+    justifyContent: "center", // Horizontal center for name
+    position: "relative", // Needed for absolute logo
   },
   logoContainer: {
     position: "absolute",
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
     width: "40%",
-    minHeight: "100%",
+    minHeight: "90%",
   },
   rightPanel: {
     paddingTop: 20,
@@ -85,7 +86,7 @@ const styles = StyleSheet.create({
     marginRight: 20,
     marginTop: 20,
     marginBottom: 20,
-    minHeight: "100%",
+    minHeight: "90%",
   },
   // Styles for content that might break across pages
   leftPanelContent: {

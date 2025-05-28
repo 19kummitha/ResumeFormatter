@@ -72,19 +72,17 @@ const createStyledSections = (data) => {
   const rightContent = [];
 
   // === LEFT CONTENT ===
-  if (Array.isArray(data.education) && data.education.length > 0) {
+  if (data.education) {
     leftContent.push(createSectionHeading("Education", "FFFFFF"));
-    data.education.forEach((edu) => {
-      leftContent.push(
-        trueBulletParagraph("", edu, {
-          bulletColor: "FFFFFF",
-          valueColor: "FFFFFF",
-          lineSpacing: 276,
-          indent: { left: 300 },
-          valueFontSize: 18, // Set font size to 9 points (18 half-points)
-        })
-      );
-    });
+    leftContent.push(
+      trueBulletParagraph("", data.education, {
+        bulletColor: "FFFFFF",
+        valueColor: "FFFFFF",
+        lineSpacing: 276,
+        indent: { left: 300 },
+        valueFontSize: 18, // Set font size to 9 points (18 half-points)
+      })
+    );
   }
 
   if (Array.isArray(data.skills) && data.skills.length > 0) {
