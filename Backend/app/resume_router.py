@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Backgro
 from sqlalchemy.orm import Session
 from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, inspect
 from sqlalchemy.sql import func
+from auth.auth import JWTBearer
 from app.services.azure_clients import extract_resume_details_with_azure, extract_resume_details_with_azure_vision
 from app.services.image_processors import convert_pdf_to_images
 from app.services.resume_parser import clean_json_string, convert_docx_to_pdf, extract_text_from_docx, extract_text_from_pdf
@@ -25,7 +26,7 @@ def column_exists(table_name, column_name):
 # Flag to track if processing_method column exists
 HAS_PROCESSING_METHOD_COLUMN = column_exists('resume_history', 'processing_method')
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(JWTBearer())])
 
 # In-memory task storage (replace with Redis or DB in production)
 TASKS = {}

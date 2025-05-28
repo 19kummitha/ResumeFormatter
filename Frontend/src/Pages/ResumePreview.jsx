@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
     width: "40%",
-    minHeight: "90%",
+    minHeight: "80%",
   },
   rightPanel: {
     paddingTop: 20,
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     marginRight: 20,
     marginTop: 20,
     marginBottom: 20,
-    minHeight: "90%",
+    minHeight: "80%",
   },
   // Styles for content that might break across pages
   leftPanelContent: {
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     paddingLeft: 15,
     position: "relative",
     fontSize: 11,
-    lineHeight: 1.4,
+    lineHeight: 1.15,
   },
   squareBullet: {
     position: "absolute",
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     position: "relative",
     fontSize: 11,
-    lineHeight: 1.4,
+    lineHeight: 1.15,
   },
   skillContainer: {
     marginBottom: 10,
@@ -191,13 +191,15 @@ const ResumePDF = ({ data }) => {
             <View style={styles.leftPanel}>
               <View style={styles.leftPanelContent}>
                 {/* Education */}
-                {data.education && (
+                {data.education && data.education.length > 0 && (
                   <View style={styles.sectionWrapper}>
                     <Text style={styles.sectionHeading}>Education</Text>
-                    <View style={styles.leftPanelListItem}>
-                      <View style={styles.leftPanelSquareBullet} />
-                      <Text style={styles.listItemText}>{data.education}</Text>
-                    </View>
+                    {data.education.map((edu, index) => (
+                      <View key={index} style={styles.leftPanelListItem}>
+                        <View style={styles.leftPanelSquareBullet} />
+                        <Text style={styles.listItemText}>{edu}</Text>
+                      </View>
+                    ))}
                   </View>
                 )}
 
