@@ -125,7 +125,135 @@ async def upload_resume(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Unexpected error occurred: {str(e)}")
+
+@router.post("/upload-multiple")
+async def upload_multiple_resumes(
+    files: List[UploadFile] = File(...),
+    background_tasks: BackgroundTasks = None,
+    db: Session = Depends(get_db),
+    use_vision: bool = True
+):
+    """Upload and process multiple resume files"""
+    try:
+        # Validate number of files
+        if len(files) > 10:
+            raise HTTPException(status_code=400, detail="Maximum 10 files allowed")
         
+        # Validate file types
+        allowed_extensions = ['.pdf', '.doc', '.docx']
+        allowed_mime_types = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ]
+        
+        batch_id = str(uuid.uuid4())
+        task_ids = []
+        
+        for file in files:
+            # Validate each file
+            file_extension = f".{file.filename.split('.')[-1].lower()}"
+            if file_extension not in allowed_extensions or file.content_type not in allowed_mime_types:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"File {file.filename}: Only PDF, DOC, or DOCX files are supported."
+                )
+            
+            # Generate unique task ID for each file
+            task_id = str(uuid.uuid4())
+            task_ids.append(task_id)
+            
+            # Read file content
+            file_content = await file.read()
+            file_size = len(file_content)
+            
+            # Create temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as tmp:
+                tmp.write(file_content)
+                tmp_path = tmp.name
+            
+            # Initialize task status
+            TASKS[task_id] = {
+                "status": TaskStatus.PENDING,
+                "stage": "upload",
+                "progress": 0,
+                "data": None,
+                "error": None,
+                "file_path": tmp_path,
+                "file_extension": file_extension,
+                "filename": file.filename,
+                "file_size": file_size,
+                "user_id": None,
+                "use_vision": use_vision,
+                "batch_id": batch_id
+            }
+            
+            # Start processing in background
+            background_tasks.add_task(process_resume, task_id, db)
+        
+        return {
+            "batch_id": batch_id,
+            "task_ids": task_ids,
+            "status": "processing",
+            "total_files": len(files),
+            "method": "vision" if use_vision else "text"
+        }
+
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Unexpected error occurred: {str(e)}")
+
+@router.get("/batch-progress/{batch_id}")
+async def get_batch_progress(batch_id: str):
+    """Get progress for all files in a batch"""
+    try:
+        batch_tasks = {task_id: task for task_id, task in TASKS.items() 
+                      if task.get("batch_id") == batch_id}
+        
+        if not batch_tasks:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        
+        total_files = len(batch_tasks)
+        completed_files = sum(1 for task in batch_tasks.values() 
+                            if task["status"] == TaskStatus.COMPLETED)
+        failed_files = sum(1 for task in batch_tasks.values() 
+                         if task["status"] == TaskStatus.FAILED)
+        
+        overall_progress = sum(task["progress"] for task in batch_tasks.values()) / total_files
+        
+        batch_status = "completed" if completed_files == total_files else \
+                      "failed" if failed_files == total_files else \
+                      "processing"
+        
+        return {
+            "batch_id": batch_id,
+            "status": batch_status,
+            "overall_progress": overall_progress,
+            "total_files": total_files,
+            "completed_files": completed_files,
+            "failed_files": failed_files,
+            "files": [
+                {
+                    "task_id": task_id,
+                    "filename": task["filename"],
+                    "status": task["status"],
+                    "progress": task["progress"],
+                    "stage": task.get("stage", ""),
+                    "error": task.get("error"),
+                    "data": task.get("data")
+                }
+                for task_id, task in batch_tasks.items()
+            ]
+        }
+        
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error retrieving batch progress: {str(e)}")
+
 @router.get("/progress/{task_id}")
 async def get_progress(task_id: str):
     if task_id not in TASKS:

@@ -1852,3 +1852,141 @@ Traceback (most recent call last):
 AttributeError: module 'bcrypt' has no attribute '__about__'
 2025-05-28 14:07:33,002 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
 2025-05-28 14:12:52,006 - resume - INFO - Server shutting down
+2025-05-28 14:20:18,533 - resume - INFO - Server started successfully
+2025-05-28 14:20:25,092 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\285072\Desktop\Python\ResumeExtractor\Backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-05-28 14:21:15,025 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 14:24:04,006 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 14:25:06,399 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 14:31:04,455 - resume - INFO - Server shutting down
+2025-05-28 14:31:13,481 - resume - INFO - Server started successfully
+2025-05-28 14:31:58,343 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 14:32:54,964 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 14:33:51,486 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 14:47:21,326 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\285072\Desktop\Python\ResumeExtractor\Backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-05-28 14:47:51,263 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 14:49:07,981 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 15:00:14,190 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 15:01:53,791 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 15:02:12,776 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 15:02:36,187 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 15:06:15,310 - resume - INFO - Server shutting down
+2025-05-28 15:55:55,262 - resume - INFO - Server started successfully
+2025-05-28 15:56:07,901 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\285072\Desktop\Python\ResumeExtractor\Backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-05-28 15:57:22,006 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 16:05:57,565 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 16:21:04,548 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 16:21:47,680 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 16:22:11,685 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 16:24:18,156 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 16:28:48,969 - resume - INFO - Server shutting down
+2025-05-28 16:28:52,340 - resume - INFO - Server started successfully
+2025-05-28 16:29:17,564 - resume - INFO - Server shutting down
+2025-05-28 16:29:20,984 - resume - INFO - Server started successfully
+2025-05-28 16:29:22,492 - resume - INFO - Server shutting down
+2025-05-28 16:29:25,700 - resume - INFO - Server started successfully
+2025-05-28 16:29:29,815 - resume - INFO - Server shutting down
+2025-05-28 16:29:33,080 - resume - INFO - Server started successfully
+2025-05-28 16:29:40,365 - resume - INFO - Server shutting down
+2025-05-28 16:29:44,208 - resume - INFO - Server started successfully
+2025-05-28 16:30:02,225 - resume - INFO - Server shutting down
+2025-05-28 16:30:06,027 - resume - INFO - Server started successfully
+2025-05-28 16:30:07,225 - resume - INFO - Server shutting down
+2025-05-28 16:30:10,116 - resume - INFO - Server started successfully
+2025-05-28 16:30:15,078 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\285072\Desktop\Python\ResumeExtractor\Backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-05-28 16:31:19,241 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-28 16:32:00,925 - resume - INFO - Server shutting down
+2025-05-29 06:27:24,791 - resume - INFO - Server started successfully
+2025-05-29 06:27:27,106 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\285072\Desktop\Python\ResumeExtractor\Backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-05-29 06:29:04,862 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-29 06:32:00,631 - resume - INFO - Server shutting down
+2025-05-29 06:35:35,717 - resume - INFO - Server started successfully
+2025-05-29 06:35:52,095 - resume - INFO - Server shutting down
+2025-05-29 06:36:01,331 - resume - INFO - Server started successfully
+2025-05-29 06:36:05,443 - resume - INFO - Server shutting down
+2025-05-29 06:36:14,529 - resume - INFO - Server started successfully
+2025-05-29 06:37:16,487 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-29 06:38:22,115 - resume - INFO - Server shutting down
+2025-05-29 06:38:31,951 - resume - INFO - Server started successfully
+2025-05-29 06:38:35,254 - resume - INFO - Server shutting down
+2025-05-29 06:38:41,982 - resume - INFO - Server started successfully
+2025-05-29 06:38:51,592 - resume - INFO - Server shutting down
+2025-05-29 06:38:59,958 - resume - INFO - Server started successfully
+2025-05-29 06:39:58,403 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-29 06:42:35,330 - resume - INFO - Server shutting down
+2025-05-29 06:42:41,569 - resume - INFO - Server started successfully
+2025-05-29 06:42:50,697 - resume - INFO - Server shutting down
+2025-05-29 06:42:58,855 - resume - INFO - Server started successfully
+2025-05-29 06:43:02,417 - resume - INFO - Server shutting down
+2025-05-29 06:43:10,858 - resume - INFO - Server started successfully
+2025-05-29 06:43:14,308 - resume - INFO - Server shutting down
+2025-05-29 06:43:22,055 - resume - INFO - Server started successfully
+2025-05-29 06:43:25,983 - resume - INFO - Server shutting down
+2025-05-29 06:43:33,443 - resume - INFO - Server started successfully
+2025-05-29 06:43:35,778 - resume - INFO - Server shutting down
+2025-05-29 06:43:43,110 - resume - INFO - Server started successfully
+2025-05-29 06:43:45,867 - resume - INFO - Server shutting down
+2025-05-29 06:43:54,360 - resume - INFO - Server started successfully
+2025-05-29 06:44:45,199 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-29 06:46:42,603 - resume - INFO - Server shutting down
+2025-05-29 06:46:50,616 - resume - INFO - Server started successfully
+2025-05-29 06:46:53,061 - resume - INFO - Server shutting down
+2025-05-29 06:47:00,571 - resume - INFO - Server started successfully
+2025-05-29 06:47:04,253 - resume - INFO - Server shutting down
+2025-05-29 06:47:12,353 - resume - INFO - Server started successfully
+2025-05-29 06:47:15,360 - resume - INFO - Server shutting down
+2025-05-29 06:47:24,005 - resume - INFO - Server started successfully
+2025-05-29 06:47:27,067 - resume - INFO - Server shutting down
+2025-05-29 06:47:35,162 - resume - INFO - Server started successfully
+2025-05-29 06:47:37,792 - resume - INFO - Server shutting down
+2025-05-29 06:47:45,534 - resume - INFO - Server started successfully
+2025-05-29 06:47:49,309 - resume - INFO - Server shutting down
+2025-05-29 06:47:57,080 - resume - INFO - Server started successfully
+2025-05-29 06:48:00,108 - resume - INFO - Server shutting down
+2025-05-29 06:48:08,239 - resume - INFO - Server started successfully
+2025-05-29 06:48:11,779 - resume - INFO - Server shutting down
+2025-05-29 06:48:20,425 - resume - INFO - Server started successfully
+2025-05-29 06:49:13,279 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-29 06:50:58,295 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\285072\Desktop\Python\ResumeExtractor\Backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-05-29 06:52:16,246 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-29 06:57:59,617 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-29 07:02:31,593 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-29 10:26:10,876 - resume - INFO - Server shutting down
+2025-05-29 10:34:21,954 - resume - INFO - Server started successfully
+2025-05-29 10:34:37,574 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\285072\Desktop\Python\ResumeExtractor\Backend\venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-05-29 10:35:22,746 - httpx - INFO - HTTP Request: POST https://azure-openai-uk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21 "HTTP/1.1 200 OK"
+2025-05-29 10:53:20,299 - resume - INFO - Server shutting down

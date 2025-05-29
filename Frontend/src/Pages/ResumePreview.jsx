@@ -190,19 +190,6 @@ const ResumePDF = ({ data }) => {
             {/* Left Column */}
             <View style={styles.leftPanel}>
               <View style={styles.leftPanelContent}>
-                {/* Education */}
-                {data.education && data.education.length > 0 && (
-                  <View style={styles.sectionWrapper}>
-                    <Text style={styles.sectionHeading}>Education</Text>
-                    {data.education.map((edu, index) => (
-                      <View key={index} style={styles.leftPanelListItem}>
-                        <View style={styles.leftPanelSquareBullet} />
-                        <Text style={styles.listItemText}>{edu}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-
                 {/* Skills */}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
                   <View style={styles.sectionWrapper}>

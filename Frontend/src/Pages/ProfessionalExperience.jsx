@@ -70,6 +70,30 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 10,
   },
+  sectionHeading: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  sectionWrapper: {
+    marginTop: 20,
+  },
+  leftPanelListItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 5,
+  },
+  leftPanelSquareBullet: {
+    width: 5,
+    height: 5,
+    backgroundColor: "black",
+    marginTop: 5,
+    marginRight: 6,
+  },
+  listItemText: {
+    fontSize: 12,
+    flex: 1,
+  },
 });
 
 // Create a wrapper component for bullet rows that ensures they stay together
@@ -191,6 +215,17 @@ const ProfessionalExperiencePage = ({ data }) => {
           <Text>No professional experience details available.</Text>
         )}
       </View>
+      {data.education && data.education.length > 0 && (
+        <View style={styles.sectionWrapper}>
+          <Text style={styles.sectionHeading}>Education</Text>
+          {data.education.map((edu, index) => (
+            <View key={index} style={styles.leftPanelListItem}>
+              <View style={styles.leftPanelSquareBullet} />
+              <Text style={styles.listItemText}>{edu}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </Page>
   );
 };

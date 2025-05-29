@@ -71,21 +71,7 @@ const createStyledSections = (data) => {
   const leftContent = [];
   const rightContent = [];
 
-  // === LEFT CONTENT ===
-  if (Array.isArray(data.education) && data.education.length > 0) {
-    leftContent.push(createSectionHeading("Education", "FFFFFF"));
-    data.education.forEach((edu) => {
-      leftContent.push(
-        trueBulletParagraph("", edu, {
-          bulletColor: "FFFFFF",
-          valueColor: "FFFFFF",
-          lineSpacing: 276, // 1.15 line spacing
-          indent: { left: 300 },
-        })
-      );
-    });
-  }
-
+  // === LEFT CONTENT === (Education removed from here)
   if (Array.isArray(data.skills) && data.skills.length > 0) {
     leftContent.push(createSectionHeading("Technical Expertise", "FFFFFF"));
     data.skills.forEach((skillGroup) => {
@@ -157,14 +143,11 @@ const createStyledSections = (data) => {
     });
   }
 
-  // 1. Original Base64 with prefix
   const ustLogoBase64 =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAABCCAYAAAAL1LXDAAAAAXNSR0IArs4c6QAAA7JJREFUaEPtW4111DAMliYANmgngE4ANwFlArgJoBPQm4DeBLQTlE5AmYAyAd2AbiDyBfle4vNfciZx3tnv3evrXWLpk+RPsuKwiJyQezwx85Pnt/ZrEXlORPjsDWZ+DN079jeV+YGIXhLRK0s+ZD4Q0R0z3zv1EpHfROQCfc/MqwjgayJ67wHMY0G57lPHfCYigE0ZAL9hZui4G7wEwCICT373RVMEPYCvTMQVD1g9+3MkWGOLHeglAPYtuZSw7l6DdX1eNGAROW/I6TYhZOFB8JCPgEFg70DCpQO+IqKPHsDb5vvLbibR8Aep4R6TPUBcl2aO0gGDqN4MzQIK/CsR3SyKpRvFvWlPmdeZa0NLoHQPfyKiLwEAMAi8mAy8dMBYh38S6BgVIUD/wN+GjVFtOUfRgKFxU0qGiMuHC6xtvN8rcYsHrKBReKDaGjrg+Stm3iyCpbvoRnraTHHNzGv8swgPG621EEGOdaaqiPvh6YsQ4AdmPgtNEkobTRhl3S1Z3kZ4o8B4PTDUVyHAj8x8GgE8qjAYuhAjOoDJ4XGUoTCAr7zENBsARq2Ki10D2ypnjovsYtA8eJEZ2ElKUyGy1u8AOET7yGcAvdf5EBEUBCgMXCPaPBhijGbPjiYD9OwxrmsOEYG3EXluvSIX4Ka2c6CtEwDH+okRx9quYYcAtNYruhy74l/1uHBFnrZ/ANaXwrYtsQS6HmP1PE0Jv4S1ieXmY2TTv/rVlJ/PFKTd47JFrA3glH1nKvjediz1Jvu6hMgbOnVLwrvUEdmZpE4eZfbUiTTyEMoI6RzjDDV2L1ceWM2A4NBVyNqeFRHkW4AOpZuQQcA70KvNNnvFwQgBmHDb7SrkcIdFXAALb8fybPe2Vi9l9l2W8VZDCvytWtZmPUMY2I6hTg027HMaQMtLEBka8aaPBfnmg0iDXt9ceiWXf0r5NCW4nIYycyUD/h/C55izAp7D6lPKrB6e0tpzyKoensPqU8qsHp7S2nPIqh6ew+pTyqwentLac8g6Pg9r72jMo4uQg9Dq6Z2PmsObLpnoS+fsGxkZWfvSOY1VAWeyZvVwJkMePM1RhnToBBu6lb5TNDd6jsJldTw99B4sOdhNB0wQzMORxx1ZHqkM1V0f08aa8l6DLxFw6LBaNC1WwN0QKzSkq4cdPOCtA2pI15D2HxCZKy3VNVzX8L8jxM53rpZIWt634bqe9h29WBzgoaWofX0FXHpaqh4eaIEa0sce0uh4+N79w2E0HOld1PgLGa5FbiKSBQEAAAAASUVORK5CYII=";
 
-  // 2. Extract raw base64 (remove prefix)
   const base64String = ustLogoBase64.split(",")[1];
 
-  // 3. Convert base64 to Uint8Array
   function base64ToUint8Array(base64) {
     const binaryString = atob(base64);
     const len = binaryString.length;
@@ -177,7 +160,6 @@ const createStyledSections = (data) => {
 
   const imageBytes = base64ToUint8Array(base64String);
 
-  // 4. Define the header table
   const headerTable = new Table({
     rows: [
       new TableRow({
@@ -239,7 +221,6 @@ const createStyledSections = (data) => {
     },
   });
 
-  // === TWO-COLUMN CONTENT TABLE ===
   const contentTable = new Table({
     rows: [
       new TableRow({
@@ -299,6 +280,7 @@ const createStyledSections = (data) => {
             },
           }),
         ],
+        height: { value: 12000, rule: "exact" },
       }),
     ],
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -346,7 +328,6 @@ const createStyledSections = (data) => {
           labelBold: true,
           lineSpacing: 276,
           alignment: AlignmentType.JUSTIFIED,
-          // No valueFontSize specified, defaults to 20 half-points (10 points)
         })
       );
 
@@ -359,7 +340,6 @@ const createStyledSections = (data) => {
             labelBold: true,
             lineSpacing: 276,
             alignment: AlignmentType.JUSTIFIED,
-            // No valueFontSize specified, defaults to 20 half-points (10 points)
           })
         );
       }
@@ -376,7 +356,6 @@ const createStyledSections = (data) => {
               labelBold: true,
               lineSpacing: 276,
               alignment: AlignmentType.JUSTIFIED,
-              // No valueFontSize specified, defaults to 20 half-points (10 points)
             }
           )
         );
@@ -391,7 +370,6 @@ const createStyledSections = (data) => {
             labelBold: true,
             lineSpacing: 276,
             alignment: AlignmentType.JUSTIFIED,
-            // No valueFontSize specified, defaults to 20 half-points (10 points)
           })
         );
       }
@@ -405,7 +383,6 @@ const createStyledSections = (data) => {
             labelBold: true,
             lineSpacing: 276,
             alignment: AlignmentType.JUSTIFIED,
-            // No valueFontSize specified, defaults to 20 half-points (10 points)
           })
         );
       }
@@ -422,7 +399,6 @@ const createStyledSections = (data) => {
             labelBold: true,
             lineSpacing: 276,
             alignment: AlignmentType.JUSTIFIED,
-            // No valueFontSize specified, defaults to 20 half-points (10 points)
           })
         );
 
@@ -434,7 +410,6 @@ const createStyledSections = (data) => {
                 valueColor: "000000",
                 lineSpacing: 276,
                 alignment: AlignmentType.JUSTIFIED,
-                // No valueFontSize specified, defaults to 20 half-points (10 points)
               })
             );
           }
@@ -442,6 +417,35 @@ const createStyledSections = (data) => {
       }
 
       experienceDetail.push(new Paragraph(""));
+    });
+  }
+
+  // === EDUCATION SECTION MOVED HERE (after experience_data) ===
+  if (Array.isArray(data.education) && data.education.length > 0) {
+    experienceDetail.push(
+      new Paragraph({
+        spacing: { after: 300, before: 600 },
+        children: [
+          new TextRun({
+            text: "Education",
+            bold: true,
+            size: 32,
+            font: "Arial",
+            color: "000000",
+          }),
+        ],
+      })
+    );
+
+    data.education.forEach((edu) => {
+      experienceDetail.push(
+        trueBulletParagraph("", edu, {
+          bulletColor: "000000",
+          valueColor: "000000",
+          lineSpacing: 276,
+          alignment: AlignmentType.JUSTIFIED,
+        })
+      );
     });
   }
 

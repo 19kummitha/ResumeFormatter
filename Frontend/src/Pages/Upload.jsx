@@ -13,22 +13,39 @@ import {
   Paper,
   Snackbar,
   Alert,
+  ToggleButton,
+  ToggleButtonGroup,
+  Chip,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  Divider,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { PDFDownloadLink, BlobProvider } from "@react-pdf/renderer";
 import ResumePDF from "./ResumePreview";
-import ResumeHistory from "./ResumeHistory"; // Import the ResumeHistory component
+import ResumeHistory from "./ResumeHistory";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { generateResumeDocx } from "./DocxGenerator";
+import DeleteIcon from "@mui/icons-material/Delete";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import DownloadIcon from "@mui/icons-material/Download";
 import HistoryIcon from "@mui/icons-material/History";
+import FolderIcon from "@mui/icons-material/Folder";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import ErrorIcon from "@mui/icons-material/Error";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import TextFieldsIcon from "@mui/icons-material/TextFields";
+import { generateResumeDocx } from "./DocxGenerator";
 
 const CustomTabStyle = {
   fontWeight: 600,
@@ -40,12 +57,18 @@ const CustomTabStyle = {
   },
 };
 
-// Three tabs for Upload, Download, and History
 const tabs = ["Upload Resume", "Preview & Download", "Resume History"];
 
 export default function Upload() {
-  const [file, setFile] = useState(null);
+  // File handling states
+  const [uploadMode, setUploadMode] = useState("single"); // "single" or "multiple"
+  const [files, setFiles] = useState([]); // Array of files for multiple upload
+  const [file, setFile] = useState(null); // Single file for backward compatibility
+  const [useVision, setUseVision] = useState(true); // Toggle for vision vs text processing
+
+  // Processing states
   const [jsonData, setJsonData] = useState(null);
+  const [multipleJsonData, setMultipleJsonData] = useState([]); // Array of processed data for multiple files
   const [loading, setLoading] = useState(false);
   const [downloadingDocx, setDownloadingDocx] = useState(false);
   const [error, setError] = useState(null);
@@ -54,8 +77,13 @@ export default function Upload() {
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [processingStage, setProcessingStage] = useState("");
+  const [currentProcessingFile, setCurrentProcessingFile] = useState("");
 
-  // New states for success messages
+  // Batch processing states
+  const [batchId, setBatchId] = useState(null);
+  const [batchProgress, setBatchProgress] = useState(null);
+
+  // Success states
   const [successMessage, setSuccessMessage] = useState("");
   const [openSuccessAlert, setOpenSuccessAlert] = useState(false);
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
@@ -63,7 +91,7 @@ export default function Upload() {
 
   const token = localStorage.getItem("token");
 
-  // Reset loading states when component unmounts or when activeTab changes
+  // Reset states when component unmounts or activeTab changes
   useEffect(() => {
     return () => {
       setLoading(false);
@@ -80,7 +108,17 @@ export default function Upload() {
     }
   }, [activeTab]);
 
-  // Function to simulate progress increase during processing stages
+  // Reset files when switching upload modes
+  useEffect(() => {
+    setFiles([]);
+    setFile(null);
+    setJsonData(null);
+    setMultipleJsonData([]);
+    setBatchId(null);
+    setBatchProgress(null);
+    setError(null);
+  }, [uploadMode]);
+
   const simulateProgressForStage = async (
     startPercent,
     endPercent,
@@ -97,7 +135,6 @@ export default function Upload() {
     }
   };
 
-  // Check progress status from backend
   const checkProgressStatus = async (taskId) => {
     try {
       const response = await fetch(
@@ -120,10 +157,32 @@ export default function Upload() {
     }
   };
 
-  const handleUpload = async () => {
-    if (!file) return;
+  const checkBatchProgress = async (batchId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/resume/batch-progress/${batchId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token || ""}`,
+          },
+        }
+      );
 
-    // Reset all states
+      if (response.ok) {
+        const batchData = await response.json();
+        return batchData;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error checking batch progress:", error);
+      return null;
+    }
+  };
+
+  const handleUpload = async () => {
+    const filesToProcess = uploadMode === "single" ? [file] : files;
+    if (filesToProcess.length === 0) return;
+
     setLoading(true);
     setError(null);
     setUploadProgress(0);
@@ -131,88 +190,201 @@ export default function Upload() {
     setProcessing(false);
     setProcessingStage("Starting upload...");
 
-    const form = new FormData();
-    form.append("file", file);
-
     try {
-      // First upload the file and get a task ID
-      const uploadResponse = await fetch(
-        "http://localhost:8000/resume/upload",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token || ""}`,
-          },
-          body: form,
-        }
-      );
+      // Create FormData with files
+      const form = new FormData();
+
+      if (uploadMode === "single") {
+        form.append("file", file);
+      } else {
+        // Append multiple files as per your backend expectation
+        filesToProcess.forEach((fileItem) => {
+          form.append("files", fileItem);
+        });
+      }
+
+      setUploading(false);
+      setProcessing(true);
+
+      // Simulate upload progress
+      await simulateProgressForStage(0, 20, "Uploading files...");
+
+      // Send to appropriate endpoint
+      const endpoint =
+        uploadMode === "multiple"
+          ? `http://localhost:8000/resume/upload-multiple?use_vision=${useVision}`
+          : `http://localhost:8000/resume/upload?use_vision=${useVision}`;
+
+      const uploadResponse = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token || ""}`,
+        },
+        body: form,
+      });
 
       if (!uploadResponse.ok) {
         throw new Error(`Upload failed: ${uploadResponse.statusText}`);
       }
 
-      const { task_id } = await uploadResponse.json();
-      setUploading(false);
-      setProcessing(true);
+      const responseData = await uploadResponse.json();
 
-      // Simulate upload progress (0-30%)
-      await simulateProgressForStage(0, 30, "Uploading file...");
+      if (uploadMode === "single") {
+        // Handle single file response
+        const { task_id } = responseData;
 
-      // Now poll for status updates
-      let processingComplete = false;
-      let resultData = null;
+        const progressStages = {
+          upload: { start: 20, end: 40, label: "Processing upload..." },
+          converting_docx_to_pdf_with_aspose: {
+            start: 40,
+            end: 50,
+            label: "Converting document...",
+          },
+          high_quality_image_conversion: {
+            start: 50,
+            end: 60,
+            label: "Converting to images...",
+          },
+          comprehensive_vision_analysis: {
+            start: 60,
+            end: 80,
+            label: "Analyzing with vision...",
+          },
+          enhanced_text_extraction_with_tables: {
+            start: 50,
+            end: 70,
+            label: "Extracting text...",
+          },
+          comprehensive_parsing_analysis: {
+            start: 70,
+            end: 90,
+            label: "Parsing resume...",
+          },
+          completion: { start: 90, end: 100, label: "Finalizing..." },
+        };
 
-      // Define the progress ranges for each stage
-      const progressStages = {
-        upload: { start: 30, end: 50, label: "Processing upload..." },
-        extraction: { start: 50, end: 70, label: "Extracting text..." },
-        parsing: { start: 70, end: 90, label: "Parsing resume..." },
-        completion: { start: 90, end: 100, label: "Finalizing..." },
-      };
+        let processingComplete = false;
+        let resultData = null;
 
-      while (!processingComplete) {
-        const statusData = await checkProgressStatus(task_id);
+        while (!processingComplete) {
+          const statusData = await checkProgressStatus(task_id);
 
-        if (!statusData) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          continue;
+          if (!statusData) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            continue;
+          }
+
+          if (statusData.stage && progressStages[statusData.stage]) {
+            const stage = progressStages[statusData.stage];
+            setProcessingStage(stage.label);
+
+            const stageProgress = statusData.progress || 0;
+            const actualProgress =
+              stage.start + ((stage.end - stage.start) * stageProgress) / 100;
+            setUploadProgress(Math.round(actualProgress));
+          }
+
+          if (statusData.status === "completed") {
+            processingComplete = true;
+            resultData = statusData.data;
+            setUploadProgress(100);
+            setProcessingStage("Completed!");
+          } else if (statusData.status === "failed") {
+            throw new Error(statusData.error || "Processing failed");
+          } else {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
         }
 
-        // Update progress based on current stage
-        if (statusData.stage && progressStages[statusData.stage]) {
-          const stage = progressStages[statusData.stage];
-          setProcessingStage(stage.label);
+        setJsonData(resultData);
+      } else {
+        // Handle multiple files response
+        const { batch_id, task_ids } = responseData;
+        setBatchId(batch_id);
 
-          // Calculate progress within the stage's range
-          const stageProgress = statusData.progress || 0; // 0-100 within stage
-          const actualProgress =
-            stage.start + ((stage.end - stage.start) * stageProgress) / 100;
-          setUploadProgress(Math.round(actualProgress));
-        }
+        setProcessingStage("Processing multiple files...");
+        setCurrentProcessingFile(
+          `Processing ${filesToProcess.length} files...`
+        );
 
-        if (statusData.status === "completed") {
-          processingComplete = true;
-          resultData = statusData.data;
-          // Ensure progress reaches 100%
-          setUploadProgress(100);
-          setProcessingStage("Completed!");
-        } else if (statusData.status === "failed") {
-          throw new Error(statusData.error || "Processing failed");
-        } else {
-          // Wait before polling again
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+        let batchComplete = false;
+
+        while (!batchComplete) {
+          const batchData = await checkBatchProgress(batch_id);
+
+          if (!batchData) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            continue;
+          }
+
+          setBatchProgress(batchData);
+          setUploadProgress(Math.round(batchData.overall_progress));
+
+          // Update current processing file info
+          const processingFiles = batchData.files.filter(
+            (f) => f.status === "processing"
+          );
+          if (processingFiles.length > 0) {
+            setCurrentProcessingFile(
+              `Processing: ${processingFiles[0].filename}`
+            );
+          }
+
+          if (batchData.status === "completed") {
+            batchComplete = true;
+            setProcessingStage("All files completed!");
+
+            // Extract completed results
+            const results = batchData.files
+              .filter((f) => f.status === "completed" && f.data)
+              .map((f) => ({
+                fileName: f.filename,
+                data: f.data,
+                taskId: f.task_id,
+              }));
+
+            setMultipleJsonData(results);
+          } else if (batchData.status === "failed") {
+            // Check if any files completed successfully
+            const completedFiles = batchData.files.filter(
+              (f) => f.status === "completed" && f.data
+            );
+            const failedFiles = batchData.files.filter(
+              (f) => f.status === "failed"
+            );
+
+            if (completedFiles.length > 0) {
+              const results = completedFiles.map((f) => ({
+                fileName: f.filename,
+                data: f.data,
+                taskId: f.task_id,
+              }));
+              setMultipleJsonData(results);
+
+              setError(
+                `${failedFiles.length} file(s) failed to process, but ${completedFiles.length} completed successfully.`
+              );
+            } else {
+              throw new Error("All files failed to process");
+            }
+            batchComplete = true;
+          } else {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
         }
       }
 
-      // Final delay + finish
       await new Promise((res) => setTimeout(res, 300));
       setProcessing(false);
-      setJsonData(resultData);
 
-      // Show success message and move to next step
-      setSuccessMessage(
-        "Resume successfully processed! You can now download your formatted resume."
-      );
+      const successMsg =
+        uploadMode === "single"
+          ? "Resume successfully processed! You can now download your formatted resume."
+          : `${
+              uploadMode === "multiple" ? multipleJsonData.length : 1
+            } resume(s) successfully processed! You can now download your formatted resumes.`;
+
+      setSuccessMessage(successMsg);
       setOpenSuccessAlert(true);
       setActiveTab(1);
       setLoading(false);
@@ -224,12 +396,13 @@ export default function Upload() {
     }
   };
 
-  const handleDownloadDocx = async () => {
-    if (!jsonData) return;
+  const handleDownloadDocx = async (data = null, fileName = null) => {
+    const dataToUse = data || jsonData;
+    if (!dataToUse) return;
 
     setDownloadingDocx(true);
     try {
-      await generateResumeDocx(jsonData);
+      await generateResumeDocx(dataToUse, fileName);
       setDocxDownloaded(true);
       setSuccessMessage("DOCX file successfully downloaded!");
       setOpenSuccessAlert(true);
@@ -254,23 +427,42 @@ export default function Upload() {
     setOpenSuccessAlert(false);
   };
 
-  // Function to update the processed resume data when a history item is selected
   const handleHistoryItemSelect = useCallback((resumeData) => {
     setJsonData(resumeData);
     setActiveTab(1);
     setSuccessMessage("Resume loaded from history!");
     setOpenSuccessAlert(true);
-    // Reset download states since this is a newly loaded resume
     setPdfDownloaded(false);
     setDocxDownloaded(false);
   }, []);
 
-  const onDrop = useCallback((acceptedFiles) => {
-    if (acceptedFiles.length > 0) {
-      setFile(acceptedFiles[0]);
-      setError(null);
+  const onDrop = useCallback(
+    (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        if (uploadMode === "single") {
+          setFile(acceptedFiles[0]);
+        } else {
+          // Check file limit for multiple uploads (max 10 as per backend)
+          const newFiles = [...files, ...acceptedFiles];
+          if (newFiles.length > 10) {
+            setError("Maximum 10 files allowed for batch upload");
+            return;
+          }
+          setFiles(newFiles);
+        }
+        setError(null);
+      }
+    },
+    [uploadMode, files]
+  );
+
+  const removeFile = (indexToRemove) => {
+    if (uploadMode === "single") {
+      setFile(null);
+    } else {
+      setFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
     }
-  }, []);
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -280,12 +472,12 @@ export default function Upload() {
         [".docx"],
     },
     onDrop,
-    multiple: false,
+    multiple: uploadMode === "multiple",
   });
 
-  const getFileIcon = () => {
-    if (!file) return <UploadFileIcon fontSize="large" />;
-    const ext = file.name.split(".").pop();
+  const getFileIcon = (fileName = "") => {
+    if (!fileName) return <UploadFileIcon fontSize="large" />;
+    const ext = fileName.split(".").pop()?.toLowerCase();
     if (ext === "pdf")
       return <PictureAsPdfIcon color="error" fontSize="large" />;
     if (["doc", "docx"].includes(ext))
@@ -293,11 +485,29 @@ export default function Upload() {
     return <UploadFileIcon fontSize="large" />;
   };
 
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "completed":
+        return <CheckCircleIcon color="success" />;
+      case "failed":
+        return <ErrorIcon color="error" />;
+      case "processing":
+        return <CircularProgress size={20} />;
+      default:
+        return <CircularProgress size={20} />;
+    }
+  };
+
+  const currentFiles = uploadMode === "single" ? (file ? [file] : []) : files;
+  const hasFiles = currentFiles.length > 0;
+  const hasProcessedData =
+    uploadMode === "single" ? !!jsonData : multipleJsonData.length > 0;
+
   return (
     <Box p={3} sx={{ backgroundColor: "#f1f5f9" }}>
       <Card
         sx={{
-          maxWidth: 800,
+          maxWidth: 900,
           margin: "auto",
           p: 3,
           backgroundColor: "#ffffff",
@@ -343,7 +553,7 @@ export default function Upload() {
                 icon={<DownloadIcon />}
                 iconPosition="start"
                 label={tabs[1]}
-                disabled={!jsonData}
+                disabled={!hasProcessedData}
                 sx={CustomTabStyle}
               />
               <Tab
@@ -357,6 +567,39 @@ export default function Upload() {
 
           {activeTab === 0 && (
             <Box>
+              {/* Upload Mode Toggle */}
+              <Box sx={{ mb: 3, display: "flex", justifyContent: "center" }}>
+                <ToggleButtonGroup
+                  value={uploadMode}
+                  exclusive
+                  onChange={(e, newMode) => newMode && setUploadMode(newMode)}
+                  sx={{
+                    "& .MuiToggleButton-root": {
+                      borderRadius: 2,
+                      px: 3,
+                      py: 1,
+                      "&.Mui-selected": {
+                        backgroundColor: "#1e3a8a",
+                        color: "white",
+                        "&:hover": {
+                          backgroundColor: "#1e40af",
+                        },
+                      },
+                    },
+                  }}
+                >
+                  <ToggleButton value="single" sx={{ mr: 5 }}>
+                    <InsertDriveFileIcon sx={{ mr: 1 }} />
+                    Single File
+                  </ToggleButton>
+                  <ToggleButton value="multiple">
+                    <FolderIcon sx={{ mr: 1 }} />
+                    Multiple Files
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+
+              {/* Dropzone */}
               <Box
                 sx={{
                   border: "2px dashed #94a3b8",
@@ -376,15 +619,20 @@ export default function Upload() {
               >
                 <input {...getInputProps()} />
                 <CloudUploadIcon
-                  fontSize="large"
                   sx={{ color: "#1e3a8a", fontSize: 48, mb: 1 }}
                 />
                 <Typography variant="body1" sx={{ mt: 2, fontWeight: 500 }}>
                   {isDragActive
-                    ? "Drop your file here..."
-                    : file
-                    ? `Selected: ${file.name}`
-                    : "Drag & drop your resume file here or click to browse"}
+                    ? `Drop your ${
+                        uploadMode === "single" ? "file" : "files"
+                      } here...`
+                    : hasFiles
+                    ? `${currentFiles.length} file${
+                        currentFiles.length > 1 ? "s" : ""
+                      } selected`
+                    : `Drag & drop your resume ${
+                        uploadMode === "single" ? "file" : "files"
+                      } here or click to browse`}
                 </Typography>
                 <Typography
                   variant="body2"
@@ -392,35 +640,50 @@ export default function Upload() {
                   sx={{ mt: 1 }}
                 >
                   Supported formats: PDF, DOC, DOCX
+                  {uploadMode === "multiple" && " • Max 10 files"}
                 </Typography>
               </Box>
 
-              {file && (
+              {/* File List */}
+              {hasFiles && (
                 <Paper
                   elevation={0}
                   sx={{
-                    p: 2,
                     border: "1px solid #e2e8f0",
                     borderRadius: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
                     mb: 3,
                     backgroundColor: "#f8fafc",
+                    maxHeight: 300,
+                    overflow: "auto",
                   }}
                 >
-                  {getFileIcon()}
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="body2" noWrap fontWeight={500}>
-                      {file.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {(file.size / 1024).toFixed(1)} KB
-                    </Typography>
-                  </Box>
+                  <List dense>
+                    {currentFiles.map((fileItem, index) => (
+                      <div key={index}>
+                        <ListItem>
+                          <Box sx={{ mr: 2 }}>{getFileIcon(fileItem.name)}</Box>
+                          <ListItemText
+                            primary={fileItem.name}
+                            secondary={`${(fileItem.size / 1024).toFixed(
+                              1
+                            )} KB`}
+                          />
+                          <ListItemSecondaryAction>
+                            <IconButton
+                              edge="end"
+                              onClick={() => removeFile(index)}
+                              size="small"
+                            ></IconButton>
+                          </ListItemSecondaryAction>
+                        </ListItem>
+                        {index < currentFiles.length - 1 && <Divider />}
+                      </div>
+                    ))}
+                  </List>
                 </Paper>
               )}
 
+              {/* Progress */}
               {(uploading || processing) && (
                 <Box sx={{ width: "100%", mb: 2 }}>
                   <Typography
@@ -429,7 +692,8 @@ export default function Upload() {
                     gutterBottom
                     fontWeight={500}
                   >
-                    {processingStage} ({uploadProgress}%)
+                    {currentProcessingFile || processingStage} ({uploadProgress}
+                    %)
                   </Typography>
                   <LinearProgress
                     variant="determinate"
@@ -443,9 +707,26 @@ export default function Upload() {
                       },
                     }}
                   />
+
+                  {/* Batch Progress Details */}
+                  {uploadMode === "multiple" && batchProgress && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        align="center"
+                      >
+                        Completed: {batchProgress.completed_files}/
+                        {batchProgress.total_files}
+                        {batchProgress.failed_files > 0 &&
+                          ` • Failed: ${batchProgress.failed_files}`}
+                      </Typography>
+                    </Box>
+                  )}
                 </Box>
               )}
 
+              {/* Upload Button */}
               <Box
                 mt={3}
                 display="flex"
@@ -456,7 +737,7 @@ export default function Upload() {
                 <Button
                   variant="contained"
                   onClick={handleUpload}
-                  disabled={!file || loading}
+                  disabled={!hasFiles || loading}
                   startIcon={
                     loading ? (
                       <CircularProgress size={20} color="inherit" />
@@ -478,7 +759,15 @@ export default function Upload() {
                     },
                   }}
                 >
-                  {loading ? "Processing..." : "Upload Resume"}
+                  {loading
+                    ? "Processing..."
+                    : `Upload ${
+                        uploadMode === "single"
+                          ? "Resume"
+                          : `${currentFiles.length} Resume${
+                              currentFiles.length > 1 ? "s" : ""
+                            }`
+                      }`}
                 </Button>
               </Box>
 
@@ -499,7 +788,7 @@ export default function Upload() {
             </Box>
           )}
 
-          {activeTab === 1 && jsonData && (
+          {activeTab === 1 && hasProcessedData && (
             <Box>
               <Paper
                 elevation={0}
@@ -507,7 +796,7 @@ export default function Upload() {
                   p: 2,
                   mb: 3,
                   borderRadius: 2,
-                  backgroundColor: "#ecfdf5", // Light green background
+                  backgroundColor: "#ecfdf5",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
@@ -522,7 +811,9 @@ export default function Upload() {
                     variant="h6"
                     sx={{ color: "#047857", fontWeight: 600 }}
                   >
-                    Resume Successfully Processed!
+                    {uploadMode === "single"
+                      ? "Resume Successfully Processed!"
+                      : `${multipleJsonData.length} Resume(s) Successfully Processed!`}
                   </Typography>
                 </Box>
 
@@ -530,130 +821,258 @@ export default function Upload() {
                   variant="body2"
                   sx={{ color: "#065f46", width: "100%" }}
                 >
-                  Your resume has been formatted. Choose your preferred download
-                  format below.
+                  Your resume{uploadMode === "multiple" ? "s have" : " has"}{" "}
+                  been formatted. Choose your preferred download format below.
                 </Typography>
               </Paper>
 
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2,
-                  mb: 3,
-                  borderRadius: 2,
-                  backgroundColor: "#f8fafc",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 2,
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{ color: "#1e3a8a", fontWeight: 600 }}
-                >
-                  Preview Your Resume
-                </Typography>
-
-                <Box display="flex" gap={2}>
-                  <PDFDownloadLink
-                    document={<ResumePDF data={jsonData} />}
-                    fileName={`${jsonData.name || "resume"}.pdf`}
-                    style={{ textDecoration: "none" }}
-                    onClick={handlePdfDownloaded}
+              {/* Single File Preview */}
+              {uploadMode === "single" && jsonData && (
+                <>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      mb: 3,
+                      borderRadius: 2,
+                      backgroundColor: "#f8fafc",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 2,
+                    }}
                   >
-                    {({ loading }) => (
+                    <Typography
+                      variant="h6"
+                      sx={{ color: "#1e3a8a", fontWeight: 600 }}
+                    >
+                      Preview Your Resume
+                    </Typography>
+
+                    <Box display="flex" gap={2}>
+                      <PDFDownloadLink
+                        document={<ResumePDF data={jsonData} />}
+                        fileName={`${jsonData.name || "resume"}.pdf`}
+                        style={{ textDecoration: "none" }}
+                        onClick={handlePdfDownloaded}
+                      >
+                        {({ loading }) => (
+                          <Button
+                            variant="contained"
+                            color="success"
+                            disabled={loading}
+                            size="medium"
+                            startIcon={
+                              pdfDownloaded ? (
+                                <CheckCircleIcon />
+                              ) : (
+                                <PictureAsPdfIcon />
+                              )
+                            }
+                            sx={{
+                              borderRadius: 2,
+                              backgroundColor: pdfDownloaded
+                                ? "#065f46"
+                                : "#047857",
+                              "&:hover": {
+                                backgroundColor: "#065f46",
+                              },
+                            }}
+                          >
+                            {loading
+                              ? "Preparing..."
+                              : pdfDownloaded
+                              ? "PDF Downloaded"
+                              : "Download PDF"}
+                          </Button>
+                        )}
+                      </PDFDownloadLink>
+
                       <Button
                         variant="contained"
-                        color="success"
-                        disabled={loading}
+                        color="primary"
+                        onClick={() => handleDownloadDocx()}
+                        disabled={downloadingDocx}
                         size="medium"
                         startIcon={
-                          pdfDownloaded ? (
+                          docxDownloaded ? (
                             <CheckCircleIcon />
                           ) : (
-                            <PictureAsPdfIcon />
+                            <DescriptionIcon />
                           )
                         }
                         sx={{
                           borderRadius: 2,
-                          backgroundColor: pdfDownloaded
-                            ? "#065f46"
-                            : "#047857",
+                          backgroundColor: docxDownloaded
+                            ? "#1e40af"
+                            : "#1e3a8a",
                           "&:hover": {
-                            backgroundColor: "#065f46",
+                            backgroundColor: "#1e40af",
                           },
                         }}
                       >
-                        {loading
+                        {downloadingDocx
                           ? "Preparing..."
-                          : pdfDownloaded
-                          ? "PDF Downloaded"
-                          : "Download PDF"}
+                          : docxDownloaded
+                          ? "DOCX Downloaded"
+                          : "Download DOCX"}
                       </Button>
-                    )}
-                  </PDFDownloadLink>
+                    </Box>
+                  </Paper>
 
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleDownloadDocx}
-                    disabled={downloadingDocx}
-                    size="medium"
-                    startIcon={
-                      docxDownloaded ? <CheckCircleIcon /> : <DescriptionIcon />
-                    }
+                  <Paper
+                    elevation={1}
                     sx={{
                       borderRadius: 2,
-                      backgroundColor: docxDownloaded ? "#1e40af" : "#1e3a8a",
-                      "&:hover": {
-                        backgroundColor: "#1e40af",
-                      },
+                      overflow: "hidden",
+                      height: 600,
+                      border: "1px solid #e2e8f0",
                     }}
                   >
-                    {downloadingDocx
-                      ? "Preparing..."
-                      : docxDownloaded
-                      ? "DOCX Downloaded"
-                      : "Download DOCX"}
-                  </Button>
-                </Box>
-              </Paper>
+                    <BlobProvider document={<ResumePDF data={jsonData} />}>
+                      {({ url, loading }) =>
+                        loading ? (
+                          <Box
+                            height="100%"
+                            display="flex"
+                            justifyContent="center"
+                            alignItems="center"
+                            sx={{ backgroundColor: "#f8fafc" }}
+                          >
+                            <CircularProgress sx={{ color: "#1e3a8a" }} />
+                          </Box>
+                        ) : (
+                          <iframe
+                            src={url}
+                            title="PDF Preview"
+                            width="100%"
+                            height="100%"
+                            style={{ border: "none" }}
+                          />
+                        )
+                      }
+                    </BlobProvider>
+                  </Paper>
+                </>
+              )}
 
-              <Paper
-                elevation={1}
-                sx={{
-                  borderRadius: 2,
-                  overflow: "hidden",
-                  height: 600,
-                  border: "1px solid #e2e8f0",
-                }}
-              >
-                <BlobProvider document={<ResumePDF data={jsonData} />}>
-                  {({ url, loading }) =>
-                    loading ? (
-                      <Box
-                        height="100%"
-                        display="flex"
-                        justifyContent="center"
-                        alignItems="center"
-                        sx={{ backgroundColor: "#f8fafc" }}
-                      >
-                        <CircularProgress sx={{ color: "#1e3a8a" }} />
-                      </Box>
-                    ) : (
-                      <iframe
-                        src={url}
-                        title="PDF Preview"
-                        width="100%"
-                        height="100%"
-                        style={{ border: "none" }}
-                      />
-                    )
-                  }
-                </BlobProvider>
-              </Paper>
+              {/* Multiple Files List */}
+              {uploadMode === "multiple" && multipleJsonData.length > 0 && (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 2,
+                    backgroundColor: "#f8fafc",
+                    maxHeight: 600,
+                    overflow: "auto",
+                  }}
+                >
+                  <List>
+                    {multipleJsonData.map((item, index) => (
+                      <div key={index}>
+                        <ListItem
+                          sx={{
+                            flexDirection: "column",
+                            alignItems: "stretch",
+                            py: 2,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              width: "100%",
+                              mb: 1,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              {getFileIcon(item.fileName)}
+                              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                {item.fileName}
+                              </Typography>
+                            </Box>
+                            <Chip
+                              label="Processed"
+                              color="success"
+                              size="small"
+                              icon={<CheckCircleIcon />}
+                            />
+                          </Box>
+
+                          <Box
+                            sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}
+                          >
+                            <PDFDownloadLink
+                              document={<ResumePDF data={item.data} />}
+                              fileName={`${
+                                item.data.name ||
+                                item.fileName.replace(/\.[^/.]+$/, "")
+                              }.pdf`}
+                              style={{ textDecoration: "none" }}
+                            >
+                              {({ loading }) => (
+                                <Button
+                                  variant="outlined"
+                                  color="success"
+                                  disabled={loading}
+                                  size="small"
+                                  startIcon={<PictureAsPdfIcon />}
+                                >
+                                  {loading ? "Preparing..." : "Download PDF"}
+                                </Button>
+                              )}
+                            </PDFDownloadLink>
+
+                            <Button
+                              variant="outlined"
+                              color="primary"
+                              onClick={() =>
+                                handleDownloadDocx(item.data, item.fileName)
+                              }
+                              size="small"
+                              startIcon={<DescriptionIcon />}
+                            >
+                              Download DOCX
+                            </Button>
+                          </Box>
+                        </ListItem>
+                        {index < multipleJsonData.length - 1 && <Divider />}
+                      </div>
+                    ))}
+                  </List>
+                </Paper>
+              )}
+
+              {/* Show batch progress details if available */}
+              {uploadMode === "multiple" &&
+                batchProgress &&
+                batchProgress.failed_files > 0 && (
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      borderRadius: 2,
+                      backgroundColor: "#fef3c7",
+                      border: "1px solid #f59e0b",
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ color: "#92400e" }}>
+                      <strong>Note:</strong> {batchProgress.failed_files}{" "}
+                      file(s) failed to process. Only successfully processed
+                      files are shown above.
+                    </Typography>
+                  </Paper>
+                )}
 
               <Box mt={3} display="flex" justifyContent="space-between">
                 <Button
@@ -670,7 +1089,7 @@ export default function Upload() {
                     },
                   }}
                 >
-                  Upload Another File
+                  Upload More Files
                 </Button>
 
                 {error && (
@@ -689,7 +1108,6 @@ export default function Upload() {
             </Box>
           )}
 
-          {/* Resume History Tab */}
           {activeTab === 2 && (
             <Box>
               <Typography
@@ -719,14 +1137,12 @@ export default function Upload() {
                 Upload resume
               </Button>
 
-              {/* Integrate ResumeHistory component */}
               <ResumeHistory onSelectResume={handleHistoryItemSelect} />
             </Box>
           )}
         </CardContent>
       </Card>
 
-      {/* Success Notification */}
       <Snackbar
         open={openSuccessAlert}
         autoHideDuration={6000}
