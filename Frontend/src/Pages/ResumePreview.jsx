@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   listItem: {
     flexDirection: "row",
-    marginBottom: 10,
+    marginBottom: 5,
     paddingLeft: 15,
     position: "relative",
     fontSize: 11,
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   // Professional experience wrapper
   experienceWrapper: {
     break: false, // Prevent breaking in the middle of an experience item
-    marginBottom: 15,
+    marginBottom: 5,
   },
 });
 

@@ -24,6 +24,9 @@ import {
   Divider,
   Switch,
   FormControlLabel,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
 import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
@@ -45,6 +48,8 @@ import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import ErrorIcon from "@mui/icons-material/Error";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import TextFieldsIcon from "@mui/icons-material/TextFields";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import PreviewIcon from "@mui/icons-material/Preview";
 import { generateResumeDocx } from "./DocxGenerator";
 
 const CustomTabStyle = {
@@ -83,6 +88,9 @@ export default function Upload() {
   const [batchId, setBatchId] = useState(null);
   const [batchProgress, setBatchProgress] = useState(null);
 
+  // Preview states for multiple files
+  const [expandedPreviews, setExpandedPreviews] = useState(new Set());
+
   // Success states
   const [successMessage, setSuccessMessage] = useState("");
   const [openSuccessAlert, setOpenSuccessAlert] = useState(false);
@@ -116,6 +124,7 @@ export default function Upload() {
     setMultipleJsonData([]);
     setBatchId(null);
     setBatchProgress(null);
+    setExpandedPreviews(new Set());
     setError(null);
   }, [uploadMode]);
 
@@ -435,6 +444,16 @@ export default function Upload() {
     setPdfDownloaded(false);
     setDocxDownloaded(false);
   }, []);
+
+  const togglePreview = (index) => {
+    const newExpanded = new Set(expandedPreviews);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedPreviews(newExpanded);
+  };
 
   const onDrop = useCallback(
     (acceptedFiles) => {
@@ -957,59 +976,110 @@ export default function Upload() {
                 </>
               )}
 
-              {/* Multiple Files List */}
+              {/* Multiple Files List with Preview */}
               {uploadMode === "multiple" && multipleJsonData.length > 0 && (
-                <Paper
-                  elevation={0}
-                  sx={{
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 2,
-                    backgroundColor: "#f8fafc",
-                    maxHeight: 600,
-                    overflow: "auto",
-                  }}
-                >
-                  <List>
-                    {multipleJsonData.map((item, index) => (
-                      <div key={index}>
-                        <ListItem
+                <Box>
+                  {multipleJsonData.map((item, index) => (
+                    <Accordion
+                      key={index}
+                      expanded={expandedPreviews.has(index)}
+                      onChange={() => togglePreview(index)}
+                      sx={{
+                        mb: 2,
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 2,
+                        "&:before": {
+                          display: "none",
+                        },
+                        "&.Mui-expanded": {
+                          margin: "0 0 16px 0",
+                        },
+                      }}
+                    >
+                      <AccordionSummary
+                        expandIcon={<ExpandMoreIcon />}
+                        sx={{
+                          backgroundColor: "#f8fafc",
+                          borderRadius: "8px 8px 0 0",
+                          "&.Mui-expanded": {
+                            borderRadius: expandedPreviews.has(index)
+                              ? "8px 8px 0 0"
+                              : 2,
+                          },
+                        }}
+                      >
+                        <Box
                           sx={{
-                            flexDirection: "column",
-                            alignItems: "stretch",
-                            py: 2,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            width: "100%",
+                            mr: 2,
                           }}
                         >
                           <Box
                             sx={{
                               display: "flex",
-                              justifyContent: "space-between",
                               alignItems: "center",
-                              width: "100%",
-                              mb: 1,
+                              gap: 2,
                             }}
                           >
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                              }}
-                            >
-                              {getFileIcon(item.fileName)}
+                            {getFileIcon(item.fileName)}
+                            <Box>
                               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                                 {item.fileName}
                               </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Click to{" "}
+                                {expandedPreviews.has(index)
+                                  ? "hide"
+                                  : "preview"}{" "}
+                                resume
+                              </Typography>
                             </Box>
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
                             <Chip
                               label="Processed"
                               color="success"
                               size="small"
                               icon={<CheckCircleIcon />}
                             />
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<PreviewIcon />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                togglePreview(index);
+                              }}
+                            >
+                              {expandedPreviews.has(index) ? "Hide" : "Preview"}
+                            </Button>
                           </Box>
+                        </Box>
+                      </AccordionSummary>
 
+                      <AccordionDetails sx={{ p: 0 }}>
+                        <Box sx={{ p: 2 }}>
+                          {/* Download Buttons */}
                           <Box
-                            sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}
+                            sx={{
+                              display: "flex",
+                              gap: 1,
+                              mb: 2,
+                              flexWrap: "wrap",
+                            }}
                           >
                             <PDFDownloadLink
                               document={<ResumePDF data={item.data} />}
@@ -1021,7 +1091,7 @@ export default function Upload() {
                             >
                               {({ loading }) => (
                                 <Button
-                                  variant="outlined"
+                                  variant="contained"
                                   color="success"
                                   disabled={loading}
                                   size="small"
@@ -1033,7 +1103,7 @@ export default function Upload() {
                             </PDFDownloadLink>
 
                             <Button
-                              variant="outlined"
+                              variant="contained"
                               color="primary"
                               onClick={() =>
                                 handleDownloadDocx(item.data, item.fileName)
@@ -1044,12 +1114,50 @@ export default function Upload() {
                               Download DOCX
                             </Button>
                           </Box>
-                        </ListItem>
-                        {index < multipleJsonData.length - 1 && <Divider />}
-                      </div>
-                    ))}
-                  </List>
-                </Paper>
+
+                          {/* PDF Preview */}
+                          <Paper
+                            elevation={1}
+                            sx={{
+                              borderRadius: 2,
+                              overflow: "hidden",
+                              height: 500,
+                              border: "1px solid #e2e8f0",
+                            }}
+                          >
+                            <BlobProvider
+                              document={<ResumePDF data={item.data} />}
+                            >
+                              {({ url, loading }) =>
+                                loading ? (
+                                  <Box
+                                    height="100%"
+                                    display="flex"
+                                    justifyContent="center"
+                                    alignItems="center"
+                                    sx={{ backgroundColor: "#f8fafc" }}
+                                  >
+                                    <CircularProgress
+                                      sx={{ color: "#1e3a8a" }}
+                                    />
+                                  </Box>
+                                ) : (
+                                  <iframe
+                                    src={url}
+                                    title={`PDF Preview - ${item.fileName}`}
+                                    width="100%"
+                                    height="100%"
+                                    style={{ border: "none" }}
+                                  />
+                                )
+                              }
+                            </BlobProvider>
+                          </Paper>
+                        </Box>
+                      </AccordionDetails>
+                    </Accordion>
+                  ))}
+                </Box>
               )}
 
               {/* Show batch progress details if available */}
