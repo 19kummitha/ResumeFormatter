@@ -1,5 +1,6 @@
 import json
 import re
+from app.services.image_processors import extract_hyperlinks_from_docx, extract_hyperlinks_from_pdf
 import PyPDF2
 from docx import Document
 import subprocess
@@ -7,6 +8,13 @@ import platform
 import tempfile
 import os
 
+def extract_links(file_path: str, extension: str) -> list:
+    if extension in ['.docx']:
+        return extract_hyperlinks_from_docx(file_path)
+    elif extension in ['.pdf']:
+        return extract_hyperlinks_from_pdf(file_path)
+    else:
+        return []
 
 def extract_text_from_pdf(file_path: str) -> str:
     """Legacy function to extract text from PDF - kept for backward compatibility"""

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Font,
   Image,
+  Link,
 } from "@react-pdf/renderer";
 
 import ProfessionalExperiencePage from "./ProfessionalExperience";
@@ -32,30 +33,43 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    height: 100,
+    height: "auto",
+    minHeight: 100,
     backgroundColor: "#000000",
     color: "white",
     padding: 15,
-    alignItems: "center", // Vertical center
-    justifyContent: "center", // Horizontal center for name
-    position: "relative", // Needed for absolute logo
   },
   logoContainer: {
-    position: "absolute",
-    left: 15,
-    top: 0,
-    bottom: 0,
     justifyContent: "center",
+    marginRight: 15,
   },
   logo: {
     width: 30,
     height: 30,
+  },
+  contentContainer: {
+    flex: 1,
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
   },
   name: {
     fontSize: 24,
     fontWeight: 900,
     textTransform: "uppercase",
     color: "white",
+    marginBottom: 8,
+  },
+  linkContainer: {
+    flexDirection: "row",
+    gap: 10,
+    flexWrap: "wrap",
+    justifyContent: "center",
+  },
+  link: {
+    fontSize: 10,
+    color: "blue",
+    textDecoration: "underline",
   },
   columnsContainer: {
     flexDirection: "row",
@@ -180,9 +194,25 @@ const ResumePDF = ({ data }) => {
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <Image src={ustLogoBase64} style={styles.logo} />
+              <Image
+                src={ustLogoBase64 || "/placeholder.svg"}
+                style={styles.logo}
+              />
             </View>
-            <Text style={styles.name}>{data.name}</Text>
+
+            <View style={styles.contentContainer}>
+              <Text style={styles.name}>{data.name}</Text>
+
+              {data.links && data.links.length > 0 && (
+                <View style={styles.linkContainer}>
+                  {data.links.map((link, idx) => (
+                    <Link key={idx} src={link.link} style={styles.link}>
+                      {link.text}
+                    </Link>
+                  ))}
+                </View>
+              )}
+            </View>
           </View>
 
           {/* CONTENT: two-column layout */}
