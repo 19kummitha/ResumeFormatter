@@ -326,164 +326,172 @@ async def delete_resume(resume_id: int, db: Session = Depends(get_db)):
 
 
 async def process_resume(task_id: str, db: Session):
-    from app.services.resume_parser import extract_links  # Make sure this is implemented as shown earlier
-
-    import fitz  # PyMuPDF for Rect type check
-
-    import json
-    from copy import deepcopy
-
-    def sanitize_for_json(data):
-        def default(o):
-            if isinstance(o, fitz.Rect):
-                return str(o)
-            raise TypeError(f"Object of type {o.__class__.__name__} is not JSON serializable")
-        return json.loads(json.dumps(data, default=default))
-
     task = TASKS[task_id]
     tmp_path = task["file_path"]
     file_extension = task["file_extension"]
     use_vision = task.get("use_vision", True)
     converted_pdf_path = None
-
+    
     try:
         task["status"] = TaskStatus.PROCESSING
-
-        # Extract hyperlinks early
-        links = extract_links(tmp_path, file_extension)
-
-        # For DOC/DOCX files, try conversion to PDF for vision processing
+        
+        # For DOC/DOCX files, try conversion to PDF for vision processing with enhanced error handling
         if file_extension in ['.doc', '.docx'] and use_vision:
             try:
                 task["stage"] = "converting_docx_to_pdf_with_aspose"
                 task["progress"] = 20
-
+                
                 print(f"Attempting to convert {file_extension} to PDF using Aspose.Words for enhanced vision processing...")
+                
+                # Force garbage collection before conversion to free memory
                 gc.collect()
-
+                
                 converted_pdf_path = convert_docx_to_pdf(tmp_path)
-
+                
                 if os.path.exists(converted_pdf_path):
                     file_extension = '.pdf'
                     tmp_path = converted_pdf_path
                     task["progress"] = 100
-                    print(f"Successfully converted to PDF: {converted_pdf_path}")
+                    print(f"Successfully converted to PDF using Aspose.Words for certification detection: {converted_pdf_path}")
                 else:
                     raise Exception("PDF file was not created")
-
+                
             except Exception as e:
-                print(f"DOCX to PDF conversion failed: {str(e)}")
-                print("Falling back to text-based processing...")
+                print(f"DOCX to PDF conversion with Aspose.Words failed: {str(e)}")
+                print("Falling back to enhanced text-based processing for certification extraction...")
                 use_vision = False
                 task["progress"] = 0
-
+                
+                # Force cleanup of any partial conversion attempts
                 if converted_pdf_path and os.path.exists(converted_pdf_path):
                     try:
                         os.remove(converted_pdf_path)
                         converted_pdf_path = None
                     except:
                         pass
+                
+                # Force garbage collection after failed conversion
                 gc.collect()
-
+        
+        # Process using enhanced vision-based approach for PDFs
         processing_method = "text"
-
+        
         if use_vision and file_extension == '.pdf':
             try:
                 task["stage"] = "high_quality_image_conversion"
                 task["progress"] = 0
-
-                print("Converting PDF pages to high-quality images...")
-
+                
+                print("Converting ALL pages to high-quality images for certification logo detection...")
+                
                 for i in range(1, 6):
                     time.sleep(0.4)
                     task["progress"] = i * 20
-
-                images = convert_pdf_to_images(tmp_path, dpi=400)
-                print(f"Converted {len(images)} pages to images")
+                
+                images = convert_pdf_to_images(tmp_path, dpi=400)  # Higher DPI for better text recognition
+                print(f"Converted all {len(images)} pages to high-quality images for certification detection")
                 task["progress"] = 100
-
+                
                 task["stage"] = "comprehensive_vision_analysis"
                 task["progress"] = 0
-
+                
+                print("Starting comprehensive vision analysis with certification logo detection...")
+                
                 for i in range(1, 11):
                     time.sleep(0.3)
                     task["progress"] = i * 10
-
+                    
                 extracted = extract_resume_details_with_azure_vision(images)
                 parsed = clean_json_string(extracted)
-
-                parsed["links"] = links
-
+                
                 experience_data = parsed.get('experience_data', [])
                 certifications = parsed.get('certifications', [])
-
-                print(f"Vision extraction complete: {len(experience_data)} experience entries, {len(certifications)} certifications")
-
+                print(f"Vision processing complete: {len(experience_data)} experience entries, {len(certifications)} certifications extracted")
+                
+                # Log certification details for verification
+                for cert in certifications:
+                    print(f"Certification detected: {cert}")
+                
                 task["progress"] = 100
                 processing_method = "enhanced_vision"
-
+                
             except Exception as e:
-                print(f"Vision processing failed: {str(e)}")
+                print(f"Enhanced vision processing failed: {str(e)}")
+                print("Falling back to enhanced text-based processing...")
                 use_vision = False
-
+        
+        # Enhanced text-based processing with improved table and certification extraction
         if not use_vision:
             task["stage"] = "enhanced_text_extraction_with_tables"
             task["progress"] = 0
-
-            print("Starting text-based extraction...")
-
+            
+            print("Starting enhanced text-based extraction with comprehensive table parsing...")
+            
             for i in range(1, 6):
                 time.sleep(0.3)
                 task["progress"] = i * 20
-
+            
             original_file_extension = task["file_extension"]
             original_file_path = task["file_path"]
-
+            
             if original_file_extension == '.pdf':
                 text = extract_text_from_pdf(original_file_path)
+                print(f"Extracted {len(text)} characters from PDF")
             elif original_file_extension in ['.doc', '.docx']:
                 text = extract_text_from_docx(original_file_path)
+                print(f"Enhanced DOCX extraction: {len(text)} characters with comprehensive table parsing")
             else:
                 raise Exception(f"Unsupported file type: {original_file_extension}")
-
+                
             task["progress"] = 100
+            
             task["stage"] = "comprehensive_parsing_analysis"
             task["progress"] = 0
-
+            
+            print("Starting comprehensive parsing with enhanced table and certification extraction...")
+            
             for i in range(1, 9):
                 time.sleep(0.2)
                 task["progress"] = i * 12
-
+                
             extracted = extract_resume_details_with_azure(text)
             parsed = clean_json_string(extracted)
-
-            parsed["links"] = links
-
+            task["progress"] = 100
+            
             processing_method = "enhanced_text_comprehensive"
-
+            
+            # Enhanced logging for verification
             experience_data = parsed.get('experience_data', [])
             certifications = parsed.get('certifications', [])
-
-            print(f"Text parsing complete: {len(experience_data)} experience entries, {len(certifications)} certifications")
+            print(f"Enhanced text processing complete: {len(experience_data)} experience entries, {len(certifications)} certifications")
+            
+            # Debug: Print experience entries to verify all rows were captured
+            for i, exp in enumerate(experience_data):
+                print(f"Experience {i+1}: Company={exp.get('company', 'N/A')}, Role={exp.get('role', 'N/A')}")
+            
+            # Debug: Print all certifications found
+            for i, cert in enumerate(certifications):
+                print(f"Certification {i+1}: {cert}")
 
         task["stage"] = "completion"
         task["progress"] = 100
         task["status"] = TaskStatus.COMPLETED
         task["data"] = parsed
-
-        print(f"Processing complete using {processing_method}")
-
+        
+        print(f"Processing completed successfully using {processing_method} method")
+        print(f"Final result: Successfully processed resume with {len(parsed.get('experience_data', []))} experience entries and {len(parsed.get('certifications', []))} certifications using {processing_method} method")
+        
+        # Save to database
         resume_history = ResumeHistory(
             filename=task["filename"],
-            resume_data=sanitize_for_json(parsed),
+            resume_data=parsed,
             file_size=task["file_size"],
             original_file_type=task["file_extension"].lstrip('.'),
             user_id=task["user_id"]
         )
-
+        
         if HAS_PROCESSING_METHOD_COLUMN:
             resume_history.processing_method = processing_method
-
+        
         db.add(resume_history)
         db.commit()
         db.refresh(resume_history)
@@ -492,7 +500,7 @@ async def process_resume(task_id: str, db: Session):
         traceback.print_exc()
         task["status"] = TaskStatus.FAILED
         task["error"] = str(e)
-
+        
         try:
             resume_history = ResumeHistory(
                 filename=task["filename"],
@@ -502,25 +510,27 @@ async def process_resume(task_id: str, db: Session):
                 user_id=task["user_id"],
                 status="failed"
             )
-
+            
             if HAS_PROCESSING_METHOD_COLUMN:
                 resume_history.processing_method = "enhanced_text_comprehensive" if not use_vision else "enhanced_vision"
-
+            
             db.add(resume_history)
             db.commit()
         except:
             pass
     finally:
+        # Enhanced cleanup with better error handling
         try:
             if os.path.exists(task["file_path"]):
                 os.remove(task["file_path"])
         except Exception as e:
             print(f"Error cleaning up original file: {e}")
-
+            
         try:
             if converted_pdf_path and os.path.exists(converted_pdf_path) and converted_pdf_path != task["file_path"]:
                 os.remove(converted_pdf_path)
         except Exception as e:
             print(f"Error cleaning up converted PDF: {e}")
-
+        
+        # Force garbage collection to clean up any COM objects
         gc.collect()

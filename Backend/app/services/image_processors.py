@@ -4,40 +4,6 @@ import io
 import base64
 
 
-from docx import Document
-
-def extract_hyperlinks_from_docx(file_path):
-    doc = Document(file_path)
-    hyperlinks = []
-
-    for para in doc.paragraphs:
-        for run in para.runs:
-            if run.hyperlink:
-                hyperlinks.append({
-                    "text": run.text.strip() or run.hyperlink.target,
-                    "link": run.hyperlink.target
-                })
-
-    return hyperlinks
-def extract_hyperlinks_from_pdf(file_path):
-    doc = fitz.open(file_path)
-    links = []
-
-    for page in doc:
-        link_annots = page.get_links()
-        for link in link_annots:
-            if "uri" in link:
-                rect = fitz.Rect(link["from"])
-                text = page.get_textbox(rect).strip()
-                links.append({
-                    "text": text or link["uri"],  # Fallback if no text is extracted
-                    "link": link["uri"]
-                })
-
-    return links
-
-
-
 def convert_pdf_to_images(file_path: str, dpi: int = 300) -> list:
     """Convert PDF to a list of PIL Images using PyMuPDF (fitz) with enhanced quality"""
     try:
